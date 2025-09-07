@@ -6,7 +6,7 @@
     <title>Anime Character Timeline Canvas</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -18,6 +18,9 @@
             cursor: grab;
             /* background-size is now set via JS to allow zooming */
             transition: background-image 0.3s ease-in-out;
+        }
+        #canvas-container.eraser-active {
+            cursor: crosshair;
         }
         #canvas-container:active {
             cursor: grabbing;
@@ -127,18 +130,19 @@
         .character-on-canvas:hover .delete-char-btn {
             display: flex;
         }
-        #timeline-mode-btn.active {
+        .tool-btn.active {
             background-color: #4f46e5; /* indigo-600 */
             color: white;
         }
-        #highlight-mode-btn.active {
-            background-color: #f59e0b; /* amber-500 */
-            color: white;
+        #highlight-mode-btn.active { background-color: #f59e0b; } /* amber-500 */
+        #red-cross-btn.active { background-color: #ef4444; } /* red-500 */
+        #eraser-btn.active { background-color: #6b7280; } /* gray-500 */
+
+        .tool-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
-        #red-cross-btn.active {
-            background-color: #ef4444; /* red-500 */
-            color: white;
-        }
+
         .highlight-rect {
             position: absolute;
             pointer-events: none;
@@ -190,20 +194,31 @@
     <!-- Main Canvas Area -->
     <div id="canvas-container" class="relative w-full h-full flex-grow overflow-hidden bg-white dark:bg-gray-800">
         <div id="canvas" class="absolute top-0 left-0">
-            <!-- Timelines (SVG) and Characters will be added here -->
+            <!-- Timelines (SVG), Highlights, Markers and Characters will be added here -->
         </div>
         <div id="tools-container" class="absolute top-4 left-4 z-20 flex flex-col items-start gap-2">
-            <button id="timeline-mode-btn" title="Toggle Timeline Drawing Mode" class="p-3 bg-white dark:bg-gray-700 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+            <div class="flex flex-col p-1 bg-white dark:bg-gray-700 rounded-lg shadow-lg">
+                <button id="undo-btn" title="Undo (Ctrl+Z)" class="tool-btn p-3 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                </button>
+                <button id="redo-btn" title="Redo (Ctrl+Shift+Z)" class="tool-btn p-3 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-200">
+                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </button>
+            </div>
+            <button id="timeline-mode-btn" title="Toggle Timeline Drawing Mode" class="tool-btn p-3 bg-white dark:bg-gray-700 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             </button>
             <div class="flex items-center p-1 bg-white dark:bg-gray-700 rounded-full shadow-lg">
-                <button id="highlight-mode-btn" title="Toggle Highlighting Mode" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none transition-colors duration-200">
+                <button id="highlight-mode-btn" title="Toggle Highlighting Mode" class="tool-btn p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none transition-colors duration-200">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L14.732 3.732z"></path></svg>
                 </button>
                 <input type="color" id="highlight-color-picker" value="#FFEB3B" class="w-8 h-8 cursor-pointer">
             </div>
-            <button id="red-cross-btn" title="Place a Red Cross Marker" class="p-3 bg-white dark:bg-gray-700 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
+            <button id="red-cross-btn" title="Place a Red Cross Marker" class="tool-btn p-3 bg-white dark:bg-gray-700 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <button id="eraser-btn" title="Eraser Tool" class="tool-btn p-3 bg-white dark:bg-gray-700 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
             </button>
         </div>
         <div id="drop-overlay" class="absolute inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center pointer-events-none z-50">
@@ -276,6 +291,9 @@
         const highlightModeBtn = document.getElementById('highlight-mode-btn');
         const highlightColorPicker = document.getElementById('highlight-color-picker');
         const redCrossBtn = document.getElementById('red-cross-btn');
+        const eraserBtn = document.getElementById('eraser-btn');
+        const undoBtn = document.getElementById('undo-btn');
+        const redoBtn = document.getElementById('redo-btn');
 
         const SHELF_HEIGHT = 100;
         const CHARACTER_SIZE = 70;
@@ -294,11 +312,14 @@
         let isPinching = false;
         let initialPinchDistance = 0;
         
-        let activeTool = 'pan'; // 'pan', 'timeline', 'highlight', 'redCross'
+        let activeTool = 'pan'; // 'pan', 'timeline', 'highlight', 'redCross', 'eraser'
         let highlightColor = '#FFEB3B';
         let isDrawingHighlight = false;
         let highlightStartPoint = { x: 0, y: 0 };
         let currentHighlightRect = null;
+
+        let historyStack = [];
+        let redoStack = [];
         
         function updateTransform() {
             canvas.style.transform = `translate(${pan.x}px, ${pan.y}px) scale(${scale})`;
@@ -451,6 +472,7 @@
             }
             
             activeDrag = null;
+            saveState();
         }
 
         function onPointerDown(e) { 
@@ -458,12 +480,41 @@
                 isPanning = false; 
                 isPinching = true; 
                 initialPinchDistance = getPinchDistance(e); 
+            } else if (activeTool === 'eraser' && (e.target === canvasContainer || e.target === canvas)) {
+                const coords = getEventCoords(e);
+                const containerRect = canvasContainer.getBoundingClientRect();
+                const clickX = (coords.x - containerRect.left - pan.x) / scale;
+                const clickY = (coords.y - containerRect.top - pan.y) / scale;
+
+                const elements = Array.from(canvas.children).reverse();
+                for (const el of elements) {
+                    if (el.classList.contains('character-on-canvas') || el.classList.contains('highlight-rect') || el.classList.contains('red-cross-marker')) {
+                        const elRect = {
+                            left: parseFloat(el.style.left),
+                            top: parseFloat(el.style.top),
+                            width: parseFloat(el.style.width) || CHARACTER_SIZE,
+                            height: parseFloat(el.style.height) || CHARACTER_SIZE,
+                        };
+
+                        if (clickX >= elRect.left && clickX <= elRect.left + elRect.width &&
+                            clickY >= elRect.top && clickY <= elRect.top + elRect.height) {
+                            
+                            if(el.classList.contains('character-on-canvas') && el.timeline && el.timeline.svg) {
+                                el.timeline.svg.remove();
+                            }
+                            el.remove();
+                            saveState();
+                            return; // Stop after deleting one item
+                        }
+                    }
+                }
             } else if (activeTool === 'redCross' && (e.target === canvasContainer || e.target === canvas)) {
                 const coords = getEventCoords(e);
                 const containerRect = canvasContainer.getBoundingClientRect();
                 const x = (coords.x - containerRect.left - pan.x) / scale;
                 const y = (coords.y - containerRect.top - pan.y) / scale;
                 createRedCross(x, y);
+                saveState();
             } else if (activeTool === 'highlight' && (e.target === canvasContainer || e.target === canvas)) {
                 isDrawingHighlight = true;
                 const coords = getEventCoords(e);
@@ -538,6 +589,7 @@
             if (isDrawingHighlight) {
                 isDrawingHighlight = false;
                 currentHighlightRect = null;
+                saveState();
             }
             if (isPinching && (!e.touches || e.touches.length < 2)) { isPinching = false; } 
             if (isPanning) { isPanning = false; canvasContainer.style.cursor = 'grab'; } 
@@ -554,43 +606,33 @@
         window.addEventListener('touchend', onPointerUp);
         window.addEventListener('touchcancel', onPointerUp);
         
-        timelineModeBtn.addEventListener('click', () => {
-            if (activeTool === 'timeline') {
-                activeTool = 'pan';
-                timelineModeBtn.classList.remove('active');
-            } else {
-                activeTool = 'timeline';
-                timelineModeBtn.classList.add('active');
-                highlightModeBtn.classList.remove('active');
-                redCrossBtn.classList.remove('active');
-                document.querySelectorAll('.character-on-canvas.reposition-mode').forEach(el => el.classList.remove('reposition-mode'));
-            }
-        });
+        function setActiveTool(toolName) {
+            activeTool = toolName;
+            
+            // Update button styles
+            timelineModeBtn.classList.toggle('active', toolName === 'timeline');
+            highlightModeBtn.classList.toggle('active', toolName === 'highlight');
+            redCrossBtn.classList.toggle('active', toolName === 'redCross');
+            eraserBtn.classList.toggle('active', toolName === 'eraser');
+            
+            canvasContainer.classList.toggle('eraser-active', toolName === 'eraser');
 
-        highlightModeBtn.addEventListener('click', () => {
-             if (activeTool === 'highlight') {
-                activeTool = 'pan';
-                highlightModeBtn.classList.remove('active');
-            } else {
-                activeTool = 'highlight';
-                highlightModeBtn.classList.add('active');
-                timelineModeBtn.classList.remove('active');
-                redCrossBtn.classList.remove('active');
-                document.querySelectorAll('.character-on-canvas.reposition-mode').forEach(el => el.classList.remove('reposition-mode'));
+            if (toolName !== 'pan') {
+                 document.querySelectorAll('.character-on-canvas.reposition-mode').forEach(el => el.classList.remove('reposition-mode'));
             }
+        }
+
+        timelineModeBtn.addEventListener('click', () => {
+            setActiveTool(activeTool === 'timeline' ? 'pan' : 'timeline');
         });
-        
+        highlightModeBtn.addEventListener('click', () => {
+             setActiveTool(activeTool === 'highlight' ? 'pan' : 'highlight');
+        });
         redCrossBtn.addEventListener('click', () => {
-             if (activeTool === 'redCross') {
-                activeTool = 'pan';
-                redCrossBtn.classList.remove('active');
-            } else {
-                activeTool = 'redCross';
-                redCrossBtn.classList.add('active');
-                timelineModeBtn.classList.remove('active');
-                highlightModeBtn.classList.remove('active');
-                document.querySelectorAll('.character-on-canvas.reposition-mode').forEach(el => el.classList.remove('reposition-mode'));
-            }
+             setActiveTool(activeTool === 'redCross' ? 'pan' : 'redCross');
+        });
+        eraserBtn.addEventListener('click', () => {
+            setActiveTool(activeTool === 'eraser' ? 'pan' : 'eraser');
         });
 
         highlightColorPicker.addEventListener('input', (e) => {
@@ -599,7 +641,7 @@
 
         function showToast(message){ toastMessage.textContent = message; toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3000); }
         charImageInput.addEventListener('change', () => { fileNameSpan.textContent = charImageInput.files.length > 0 ? charImageInput.files[0].name : 'No file chosen'; });
-        addCharacterForm.addEventListener('submit', (e) => { e.preventDefault(); const name = charNameInput.value; const color = charColorInput.value; const imageFile = charImageInput.files[0]; if (!name || !imageFile) { showToast("Please enter a name and choose an image for the character."); return; } const reader = new FileReader(); reader.onload = (event) => { characters.push({ id: Date.now(), name: name, color: color, imageUrl: event.target.result }); renderCharacterList(); addCharacterForm.reset(); fileNameSpan.textContent = 'No file chosen'; document.querySelector('details').open = false; }; reader.readAsDataURL(imageFile); });
+        addCharacterForm.addEventListener('submit', (e) => { e.preventDefault(); const name = charNameInput.value; const color = charColorInput.value; const imageFile = charImageInput.files[0]; if (!name || !imageFile) { showToast("Please enter a name and choose an image for the character."); return; } const reader = new FileReader(); reader.onload = (event) => { characters.push({ id: Date.now(), name: name, color: color, imageUrl: event.target.result }); renderCharacterList(); addCharacterForm.reset(); fileNameSpan.textContent = 'No file chosen'; document.querySelector('details').open = false; saveState(); }; reader.readAsDataURL(imageFile); });
         function renderCharacterList(){ characterList.innerHTML = ''; if (characters.length === 0) { emptyListMsg.style.display = 'block'; } else { emptyListMsg.style.display = 'none'; } characters.forEach(char => { const charDiv = document.createElement('div'); charDiv.className = 'flex flex-col items-center gap-1 character-list-item w-20 flex-shrink-0'; charDiv.draggable = true; charDiv.dataset.characterId = char.id; const img = document.createElement('img'); img.src = char.imageUrl; img.className = 'w-16 h-16 rounded-lg object-cover border-2'; img.style.borderColor = char.color; const nameSpan = document.createElement('span'); nameSpan.className = 'text-xs text-center truncate w-full'; nameSpan.textContent = char.name; charDiv.appendChild(img); charDiv.appendChild(nameSpan); charDiv.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', char.id)); charDiv.addEventListener('touchstart', (e) => { e.preventDefault(); startListDrag(e, charDiv, char.id); }, { passive: false }); characterList.appendChild(charDiv); }); }
         
         function createCharacterOnCanvas(character, x, y, restoredState = null) {
@@ -632,10 +674,7 @@
                     charElement.timeline.svg.remove();
                 }
                 charElement.remove();
-                const listItem = document.querySelector(`.character-list-item[data-character-id='${character.id}']`);
-                if (listItem) {
-                    listItem.style.display = 'flex';
-                }
+                saveState();
             });
             charElement.appendChild(deleteBtn);
 
@@ -696,10 +735,10 @@
             
             canvas.appendChild(marker);
         }
-
-        // --- SAVE/LOAD LOGIC ---
-        function downloadCanvasState() {
-            const canvasCharacters = [];
+        
+        // --- HISTORY (UNDO/REDO) LOGIC ---
+        function getCurrentState() {
+             const canvasCharacters = [];
             document.querySelectorAll('.character-on-canvas').forEach(charElement => {
                 canvasCharacters.push({
                     libId: parseInt(charElement.dataset.characterId),
@@ -708,7 +747,6 @@
                     timelinePoints: charElement.timeline ? charElement.timeline.points : []
                 });
             });
-
             const highlights = [];
             document.querySelectorAll('.highlight-rect').forEach(rect => {
                 highlights.push({
@@ -719,22 +757,47 @@
                     backgroundColor: rect.style.backgroundColor
                 });
             });
-
             const redCrosses = [];
             document.querySelectorAll('.red-cross-marker').forEach(marker => {
-                redCrosses.push({
-                    left: marker.style.left,
-                    top: marker.style.top,
-                });
+                redCrosses.push({ left: marker.style.left, top: marker.style.top });
             });
-
-            const state = {
-                characterLibrary: characters,
+             return {
+                characterLibrary: JSON.parse(JSON.stringify(characters)),
                 charactersOnCanvas: canvasCharacters,
                 highlights: highlights,
                 redCrosses: redCrosses,
-                viewState: { pan, scale }
             };
+        }
+
+        function saveState() {
+            redoStack = []; // Clear redo stack on new action
+            historyStack.push(getCurrentState());
+            updateUndoRedoButtons();
+        }
+
+        function undo() {
+            if (historyStack.length <= 1) return; // Can't undo the initial state
+            redoStack.push(historyStack.pop());
+            const prevState = historyStack[historyStack.length - 1];
+            loadState(prevState, true); // true indicates it's a history change
+        }
+
+        function redo() {
+            if (redoStack.length === 0) return;
+            const nextState = redoStack.pop();
+            historyStack.push(nextState);
+            loadState(nextState, true);
+        }
+
+        function updateUndoRedoButtons() {
+            undoBtn.disabled = historyStack.length <= 1;
+            redoBtn.disabled = redoStack.length === 0;
+        }
+
+        // --- SAVE/LOAD LOGIC ---
+        function downloadCanvasState() {
+            const state = getCurrentState();
+            state.viewState = { pan, scale }; // Add viewstate only for download
 
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
             const downloadAnchorNode = document.createElement('a');
@@ -745,12 +808,14 @@
             downloadAnchorNode.remove();
         }
 
-        function restoreCanvasState(state) {
+        function loadState(state, isHistoryChange = false) {
             canvas.innerHTML = '';
             
-            pan = state.viewState.pan;
-            scale = state.viewState.scale;
-            updateTransform();
+            if (state.viewState) { // Only change view if loading from file
+                pan = state.viewState.pan;
+                scale = state.viewState.scale;
+                updateTransform();
+            }
 
             if (state.highlights) {
                 state.highlights.forEach(h => {
@@ -781,13 +846,18 @@
                 }
             });
 
-            document.querySelectorAll('.character-on-canvas').forEach(charOnCanvas => {
-                const id = charOnCanvas.dataset.characterId;
-                const listItem = document.querySelector(`.character-list-item[data-character-id='${id}']`);
-                if (listItem) {
-                    listItem.style.display = 'none';
-                }
+            // Hide list items for characters on canvas after restoring
+            const onCanvasIds = new Set(state.charactersOnCanvas.map(c => c.libId));
+            document.querySelectorAll('.character-list-item').forEach(item => {
+                const id = parseInt(item.dataset.characterId);
+                item.style.display = onCanvasIds.has(id) ? 'none' : 'flex';
             });
+            
+            if (!isHistoryChange) {
+                historyStack = [state];
+                redoStack = [];
+            }
+            updateUndoRedoButtons();
         }
 
         downloadBtn.addEventListener('click', downloadCanvasState);
@@ -815,7 +885,6 @@
         
         canvasContainer.addEventListener('drop', (e) => {
             e.preventDefault();
-            
             dragCounter = 0;
             dropOverlay.classList.add('hidden');
             dropOverlay.classList.remove('flex');
@@ -828,6 +897,7 @@
                 const x = (e.clientX - containerRect.left - pan.x) / scale;
                 const y = (e.clientY - containerRect.top - pan.y) / scale;
                 createCharacterOnCanvas(character, x, y);
+                saveState();
 
             } else if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                 const file = e.dataTransfer.files[0];
@@ -837,7 +907,7 @@
                         try {
                             const loadedState = JSON.parse(event.target.result);
                             if (loadedState.characterLibrary && loadedState.charactersOnCanvas && loadedState.viewState) {
-                                restoreCanvasState(loadedState);
+                                loadState(loadedState);
                             } else {
                                 showToast("Invalid JSON file structure.");
                             }
@@ -854,7 +924,7 @@
 
         function startListDrag(e, element, charId) { const ghost = element.cloneNode(true); ghost.id = 'ghost-element'; document.body.appendChild(ghost); const coords = getEventCoords(e); ghost.style.left = `${coords.x - ghost.offsetWidth / 2}px`; ghost.style.top = `${coords.y - ghost.offsetHeight / 2}px`; listDrag = { ghost, charId }; window.addEventListener('touchmove', moveListDrag, { passive: false }); window.addEventListener('touchend', endListDrag, { once: true }); }
         function moveListDrag(e) { if (!listDrag) return; e.preventDefault(); const coords = getEventCoords(e); listDrag.ghost.style.left = `${coords.x - listDrag.ghost.offsetWidth / 2}px`; listDrag.ghost.style.top = `${coords.y - listDrag.ghost.offsetHeight / 2}px`; }
-        function endListDrag(e) { if (!listDrag) return; window.removeEventListener('moveListDrag', moveListDrag); listDrag.ghost.remove(); const touch = e.changedTouches[0]; const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY); if (dropTarget === canvasContainer || canvasContainer.contains(dropTarget)) { const character = characters.find(c => c.id == listDrag.charId); if (character) { const containerRect = canvasContainer.getBoundingClientRect(); const x = (touch.clientX - containerRect.left - pan.x) / scale; const y = (touch.clientY - containerRect.top - pan.y) / scale; createCharacterOnCanvas(character, x, y); } } listDrag = null; }
+        function endListDrag(e) { if (!listDrag) return; window.removeEventListener('moveListDrag', moveListDrag); listDrag.ghost.remove(); const touch = e.changedTouches[0]; const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY); if (dropTarget === canvasContainer || canvasContainer.contains(dropTarget)) { const character = characters.find(c => c.id == listDrag.charId); if (character) { const containerRect = canvasContainer.getBoundingClientRect(); const x = (touch.clientX - containerRect.left - pan.x) / scale; const y = (touch.clientY - containerRect.top - pan.y) / scale; createCharacterOnCanvas(character, x, y); saveState(); } } listDrag = null; }
 
         // --- DARK MODE LOGIC ---
         const themeToggleBtn = document.getElementById('theme-toggle');
@@ -898,9 +968,24 @@
             updateToggleIcon();
         });
 
+        // --- KEYBOARD SHORTCUTS ---
+        window.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'z') {
+                e.preventDefault();
+                undo();
+            } else if (e.ctrlKey && e.shiftKey && e.key === 'Z') {
+                e.preventDefault();
+                redo();
+            }
+        });
+
+        undoBtn.addEventListener('click', undo);
+        redoBtn.addEventListener('click', redo);
+
         // --- Initial Render ---
         renderCharacterList();
         updateTransform();
+        saveState(); // Save the initial empty state
     });
 </script>
 
