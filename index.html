@@ -265,8 +265,9 @@
             if (activeDrag.mode === 'timeline') {
                 let newLeft = currentX - activeDrag.offsetX;
                 const rawTop = currentY - activeDrag.offsetY;
-                const snappedCenterY = Math.round((rawTop + CHARACTER_HALF_SIZE) / SHELF_HEIGHT) * SHELF_HEIGHT;
-                const snappedTop = snappedCenterY - CHARACTER_HALF_SIZE;
+                // Snap bottom of character to the line
+                const snappedShelfY = Math.round((rawTop + CHARACTER_SIZE) / SHELF_HEIGHT) * SHELF_HEIGHT;
+                const snappedTop = snappedShelfY - CHARACTER_SIZE;
                 
                 const lastCommittedPoint = activeDrag.timeline.points[activeDrag.timeline.points.length - 1];
                 const lastCommittedLeft = lastCommittedPoint.x - CHARACTER_HALF_SIZE;
@@ -275,6 +276,7 @@
                 activeDrag.element.style.left = `${newLeft}px`;
                 activeDrag.element.style.top = `${snappedTop}px`;
                 
+                // Draw path from the vertical center of the character
                 const currentPos = { x: newLeft + CHARACTER_HALF_SIZE, y: snappedTop + CHARACTER_HALF_SIZE };
                 let previewPoints = [...activeDrag.timeline.points];
                 const lastCorner = previewPoints[previewPoints.length - 1];
@@ -295,8 +297,9 @@
             } else if (activeDrag.mode === 'reposition') {
                 const newLeft = currentX - activeDrag.offsetX;
                 const rawTop = currentY - activeDrag.offsetY;
-                const snappedCenterY = Math.round((rawTop + CHARACTER_HALF_SIZE) / SHELF_HEIGHT) * SHELF_HEIGHT;
-                const snappedTop = snappedCenterY - CHARACTER_HALF_SIZE;
+                // Snap bottom of character to the line
+                const snappedShelfY = Math.round((rawTop + CHARACTER_SIZE) / SHELF_HEIGHT) * SHELF_HEIGHT;
+                const snappedTop = snappedShelfY - CHARACTER_SIZE;
 
                 const deltaX = newLeft - activeDrag.originalLeft;
                 const deltaY = snappedTop - activeDrag.originalTop;
@@ -369,8 +372,10 @@
         function createCharacterOnCanvas(character, x, y) {
             const charElement = document.createElement('div');
             charElement.className = 'character-on-canvas';
-            const snappedCenterY = Math.round((y) / SHELF_HEIGHT) * SHELF_HEIGHT;
-            const snappedTop = snappedCenterY - CHARACTER_HALF_SIZE;
+            // Snap the character's bottom to the nearest shelf line
+            const snappedShelfY = Math.round(y / SHELF_HEIGHT) * SHELF_HEIGHT;
+            const snappedTop = snappedShelfY - CHARACTER_SIZE;
+            
             charElement.style.left = `${x - CHARACTER_HALF_SIZE}px`;
             charElement.style.top = `${snappedTop}px`;
             charElement.dataset.color = character.color;
