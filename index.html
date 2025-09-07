@@ -16,7 +16,7 @@
         }
         #canvas-container {
             cursor: grab;
-            background-size: 100% 100px; /* Shelf lines are 100px apart */
+            /* background-size is now set via JS to allow zooming */
             transition: background-image 0.3s ease-in-out;
         }
         #canvas-container:active {
@@ -189,6 +189,8 @@
         
         function updateTransform() {
             canvas.style.transform = `translate(${pan.x}px, ${pan.y}px) scale(${scale})`;
+            canvasContainer.style.backgroundPosition = `${pan.x}px ${pan.y}px`;
+            canvasContainer.style.backgroundSize = `100% ${SHELF_HEIGHT * scale}px`;
         }
 
         function getEventCoords(e) {
