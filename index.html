@@ -115,6 +115,11 @@
         <div id="canvas" class="absolute top-0 left-0">
             <!-- Timelines (SVG) and Characters will be added here -->
         </div>
+        <div id="drop-overlay" class="absolute inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center pointer-events-none z-50">
+            <div class="text-center p-10 border-4 border-dashed border-white rounded-lg">
+                <p class="text-white text-2xl font-bold">Drop your JSON file here to load</p>
+            </div>
+        </div>
     </div>
 
     <!-- Bottom Control Panel -->
@@ -137,10 +142,15 @@
                         <button type="submit" class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-md font-bold w-full md:w-auto">Add</button>
                     </form>
                 </details>
-                <button id="theme-toggle" type="button" class="ml-3 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600">
-                    <svg id="theme-toggle-dark-icon" class="hidden w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-                    <svg id="theme-toggle-light-icon" class="hidden w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.121-3.536a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM10 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm-4.464-3.05a1 1 0 00-1.414 1.414l.707.707a1 1 0 001.414-1.414l-.707-.707zm-2.121-3.536a1 1 0 01.707-.293h1.414a1 1 0 110 2H4.222a1 1 0 01-.707-1.707z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
-                </button>
+                <div class="flex items-center ml-3">
+                    <button id="download-btn" type="button" class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600" title="Download Timeline">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    </button>
+                    <button id="theme-toggle" type="button" class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600">
+                        <svg id="theme-toggle-dark-icon" class="hidden w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                        <svg id="theme-toggle-light-icon" class="hidden w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.121-3.536a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM10 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm-4.464-3.05a1 1 0 00-1.414 1.414l.707.707a1 1 0 001.414-1.414l-.707-.707zm-2.121-3.536a1 1 0 01.707-.293h1.414a1 1 0 110 2H4.222a1 1 0 01-.707-1.707z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+                    </button>
+                </div>
             </div>
 
             <div id="character-list-container" class="mt-2 bg-white dark:bg-gray-900 p-2 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors duration-300">
@@ -169,6 +179,8 @@
         const emptyListMsg = document.getElementById('empty-list-msg');
         const toast = document.getElementById('toast');
         const toastMessage = document.getElementById('toast-message');
+        const downloadBtn = document.getElementById('download-btn');
+        const dropOverlay = document.getElementById('drop-overlay');
 
         const SHELF_HEIGHT = 100;
         const CHARACTER_SIZE = 70;
@@ -265,7 +277,6 @@
             if (activeDrag.mode === 'timeline') {
                 let newLeft = currentX - activeDrag.offsetX;
                 const rawTop = currentY - activeDrag.offsetY;
-                // Snap bottom of character to the line
                 const snappedShelfY = Math.round((rawTop + CHARACTER_SIZE) / SHELF_HEIGHT) * SHELF_HEIGHT;
                 const snappedTop = snappedShelfY - CHARACTER_SIZE;
                 
@@ -276,7 +287,6 @@
                 activeDrag.element.style.left = `${newLeft}px`;
                 activeDrag.element.style.top = `${snappedTop}px`;
                 
-                // Draw path from the vertical center of the character
                 const currentPos = { x: newLeft + CHARACTER_HALF_SIZE, y: snappedTop + CHARACTER_HALF_SIZE };
                 let previewPoints = [...activeDrag.timeline.points];
                 const lastCorner = previewPoints[previewPoints.length - 1];
@@ -297,7 +307,6 @@
             } else if (activeDrag.mode === 'reposition') {
                 const newLeft = currentX - activeDrag.offsetX;
                 const rawTop = currentY - activeDrag.offsetY;
-                // Snap bottom of character to the line
                 const snappedShelfY = Math.round((rawTop + CHARACTER_SIZE) / SHELF_HEIGHT) * SHELF_HEIGHT;
                 const snappedTop = snappedShelfY - CHARACTER_SIZE;
 
@@ -364,43 +373,166 @@
         function showToast(message){ toastMessage.textContent = message; toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3000); }
         charImageInput.addEventListener('change', () => { fileNameSpan.textContent = charImageInput.files.length > 0 ? charImageInput.files[0].name : 'No file chosen'; });
         addCharacterForm.addEventListener('submit', (e) => { e.preventDefault(); const name = charNameInput.value; const color = charColorInput.value; const imageFile = charImageInput.files[0]; if (!name || !imageFile) { showToast("Please enter a name and choose an image for the character."); return; } const reader = new FileReader(); reader.onload = (event) => { characters.push({ id: Date.now(), name: name, color: color, imageUrl: event.target.result }); renderCharacterList(); addCharacterForm.reset(); fileNameSpan.textContent = 'No file chosen'; document.querySelector('details').open = false; }; reader.readAsDataURL(imageFile); });
-        function renderCharacterList(){ characterList.innerHTML = ''; if (characters.length === 0) { characterList.appendChild(emptyListMsg); return; } characters.forEach(char => { const charDiv = document.createElement('div'); charDiv.className = 'flex flex-col items-center gap-1 character-list-item w-20 flex-shrink-0'; charDiv.draggable = true; charDiv.dataset.characterId = char.id; const img = document.createElement('img'); img.src = char.imageUrl; img.className = 'w-16 h-16 rounded-lg object-cover border-2'; img.style.borderColor = char.color; const nameSpan = document.createElement('span'); nameSpan.className = 'text-xs text-center truncate w-full'; nameSpan.textContent = char.name; charDiv.appendChild(img); charDiv.appendChild(nameSpan); charDiv.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', char.id)); charDiv.addEventListener('touchstart', (e) => { e.preventDefault(); startListDrag(e, charDiv, char.id); }, { passive: false }); characterList.appendChild(charDiv); }); }
+        function renderCharacterList(){ characterList.innerHTML = ''; if (characters.length === 0) { emptyListMsg.style.display = 'block'; } else { emptyListMsg.style.display = 'none'; } characters.forEach(char => { const charDiv = document.createElement('div'); charDiv.className = 'flex flex-col items-center gap-1 character-list-item w-20 flex-shrink-0'; charDiv.draggable = true; charDiv.dataset.characterId = char.id; const img = document.createElement('img'); img.src = char.imageUrl; img.className = 'w-16 h-16 rounded-lg object-cover border-2'; img.style.borderColor = char.color; const nameSpan = document.createElement('span'); nameSpan.className = 'text-xs text-center truncate w-full'; nameSpan.textContent = char.name; charDiv.appendChild(img); charDiv.appendChild(nameSpan); charDiv.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', char.id)); charDiv.addEventListener('touchstart', (e) => { e.preventDefault(); startListDrag(e, charDiv, char.id); }, { passive: false }); characterList.appendChild(charDiv); }); }
         
-        canvasContainer.addEventListener('dragover', (e) => e.preventDefault());
-        canvasContainer.addEventListener('drop', (e) => { e.preventDefault(); const charId = e.dataTransfer.getData('text/plain'); const character = characters.find(c => c.id == charId); if (!character) return; const containerRect = canvasContainer.getBoundingClientRect(); const x = (e.clientX - containerRect.left - pan.x) / scale; const y = (e.clientY - containerRect.top - pan.y) / scale; createCharacterOnCanvas(character, x, y); });
-
-        function createCharacterOnCanvas(character, x, y) {
+        function createCharacterOnCanvas(character, x, y, restoredState = null) {
             const charElement = document.createElement('div');
             charElement.className = 'character-on-canvas';
-            // Snap the character's bottom to the nearest shelf line
-            const snappedShelfY = Math.round(y / SHELF_HEIGHT) * SHELF_HEIGHT;
-            const snappedTop = snappedShelfY - CHARACTER_SIZE;
-            
-            charElement.style.left = `${x - CHARACTER_HALF_SIZE}px`;
-            charElement.style.top = `${snappedTop}px`;
             charElement.dataset.color = character.color;
+            charElement.dataset.characterId = character.id;
+
+            if (restoredState) {
+                charElement.style.left = restoredState.left;
+                charElement.style.top = restoredState.top;
+            } else {
+                const snappedShelfY = Math.round(y / SHELF_HEIGHT) * SHELF_HEIGHT;
+                const snappedTop = snappedShelfY - CHARACTER_SIZE;
+                charElement.style.left = `${x - CHARACTER_HALF_SIZE}px`;
+                charElement.style.top = `${snappedTop}px`;
+            }
+
             const img = document.createElement('img');
             img.src = character.imageUrl;
             img.style.borderColor = character.color;
             charElement.appendChild(img);
             canvas.appendChild(charElement);
+            
             charElement.addEventListener('mousedown', (e) => dragCharacterStart(e, charElement));
             charElement.addEventListener('touchstart', (e) => dragCharacterStart(e, charElement), { passive: false });
-
             charElement.addEventListener('dblclick', (e) => {
                 e.stopPropagation();
                 document.querySelectorAll('.character-on-canvas.reposition-mode').forEach(el => {
-                    if (el !== charElement) {
-                        el.classList.remove('reposition-mode');
-                    }
+                    if (el !== charElement) el.classList.remove('reposition-mode');
                 });
                 charElement.classList.toggle('reposition-mode');
             });
+
+            if (restoredState && restoredState.timelinePoints && restoredState.timelinePoints.length > 1) {
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('stroke', character.color);
+                path.setAttribute('stroke-width', '12');
+                path.setAttribute('stroke-linecap', 'round');
+                path.setAttribute('stroke-linejoin', 'round');
+                path.setAttribute('fill', 'none');
+                path.setAttribute('d', generatePathD(restoredState.timelinePoints));
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.classList.add('timeline-svg');
+                svg.appendChild(path);
+                canvas.insertBefore(svg, canvas.firstChild);
+                charElement.timeline = { svg: svg, path: path, points: restoredState.timelinePoints };
+            }
         }
+
+        // --- SAVE/LOAD LOGIC ---
+        function downloadCanvasState() {
+            const canvasCharacters = [];
+            document.querySelectorAll('.character-on-canvas').forEach(charElement => {
+                canvasCharacters.push({
+                    libId: parseInt(charElement.dataset.characterId),
+                    left: charElement.style.left,
+                    top: charElement.style.top,
+                    timelinePoints: charElement.timeline ? charElement.timeline.points : []
+                });
+            });
+
+            const state = {
+                characterLibrary: characters,
+                charactersOnCanvas: canvasCharacters,
+                viewState: { pan, scale }
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "anime_timeline.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+        function restoreCanvasState(state) {
+            canvas.innerHTML = '';
+            
+            pan = state.viewState.pan;
+            scale = state.viewState.scale;
+            updateTransform();
+
+            characters = state.characterLibrary;
+            renderCharacterList();
+
+            state.charactersOnCanvas.forEach(charState => {
+                const character = characters.find(c => c.id === charState.libId);
+                if (character) {
+                    createCharacterOnCanvas(character, 0, 0, charState);
+                }
+            });
+        }
+
+        downloadBtn.addEventListener('click', downloadCanvasState);
+
+        let dragCounter = 0;
+        canvasContainer.addEventListener('dragenter', (e) => {
+            if (e.dataTransfer.types.includes('Files')) {
+                e.preventDefault();
+                dragCounter++;
+                dropOverlay.classList.remove('hidden');
+                dropOverlay.classList.add('flex');
+            }
+        });
+        canvasContainer.addEventListener('dragleave', (e) => {
+            if (e.dataTransfer.types.includes('Files')) {
+                e.preventDefault();
+                dragCounter--;
+                if (dragCounter === 0) {
+                    dropOverlay.classList.add('hidden');
+                    dropOverlay.classList.remove('flex');
+                }
+            }
+        });
+        canvasContainer.addEventListener('dragover', (e) => e.preventDefault());
         
+        canvasContainer.addEventListener('drop', (e) => {
+            e.preventDefault();
+
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                dragCounter = 0;
+                dropOverlay.classList.add('hidden');
+                dropOverlay.classList.remove('flex');
+
+                const file = e.dataTransfer.files[0];
+                if (file.type === "application/json") {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const loadedState = JSON.parse(event.target.result);
+                            if (loadedState.characterLibrary && loadedState.charactersOnCanvas && loadedState.viewState) {
+                                restoreCanvasState(loadedState);
+                            } else {
+                                showToast("Invalid JSON file structure.");
+                            }
+                        } catch (err) {
+                            showToast("Error parsing JSON file.");
+                        }
+                    };
+                    reader.readAsText(file);
+                } else {
+                    showToast("Please drop a valid .json file.");
+                }
+                return;
+            }
+
+            const charId = e.dataTransfer.getData('text/plain');
+            const character = characters.find(c => c.id == charId);
+            if (!character) return;
+            const containerRect = canvasContainer.getBoundingClientRect();
+            const x = (e.clientX - containerRect.left - pan.x) / scale;
+            const y = (e.clientY - containerRect.top - pan.y) / scale;
+            createCharacterOnCanvas(character, x, y);
+        });
+
         function startListDrag(e, element, charId) { const ghost = element.cloneNode(true); ghost.id = 'ghost-element'; document.body.appendChild(ghost); const coords = getEventCoords(e); ghost.style.left = `${coords.x - ghost.offsetWidth / 2}px`; ghost.style.top = `${coords.y - ghost.offsetHeight / 2}px`; listDrag = { ghost, charId }; window.addEventListener('touchmove', moveListDrag, { passive: false }); window.addEventListener('touchend', endListDrag, { once: true }); }
         function moveListDrag(e) { if (!listDrag) return; e.preventDefault(); const coords = getEventCoords(e); listDrag.ghost.style.left = `${coords.x - listDrag.ghost.offsetWidth / 2}px`; listDrag.ghost.style.top = `${coords.y - listDrag.ghost.offsetHeight / 2}px`; }
-        function endListDrag(e) { if (!listDrag) return; window.removeEventListener('moveListDrag', moveListDrag); listDrag.ghost.remove(); const touch = e.changedTouches[0]; const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY); if (dropTarget === canvasContainer) { const character = characters.find(c => c.id == listDrag.charId); if (character) { const containerRect = canvasContainer.getBoundingClientRect(); const x = (touch.clientX - containerRect.left - pan.x) / scale; const y = (touch.clientY - containerRect.top - pan.y) / scale; createCharacterOnCanvas(character, x, y); } } listDrag = null; }
+        function endListDrag(e) { if (!listDrag) return; window.removeEventListener('moveListDrag', moveListDrag); listDrag.ghost.remove(); const touch = e.changedTouches[0]; const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY); if (dropTarget === canvasContainer || canvasContainer.contains(dropTarget)) { const character = characters.find(c => c.id == listDrag.charId); if (character) { const containerRect = canvasContainer.getBoundingClientRect(); const x = (touch.clientX - containerRect.left - pan.x) / scale; const y = (touch.clientY - containerRect.top - pan.y) / scale; createCharacterOnCanvas(character, x, y); } } listDrag = null; }
 
         // --- DARK MODE LOGIC ---
         const themeToggleBtn = document.getElementById('theme-toggle');
