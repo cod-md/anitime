@@ -550,8 +550,13 @@
         
         canvasContainer.addEventListener('drop', (e) => {
             e.preventDefault();
-            const charId = e.dataTransfer.getData('text/plain');
+            
+            // Always hide overlay and reset counter on any successful drop.
+            dragCounter = 0;
+            dropOverlay.classList.add('hidden');
+            dropOverlay.classList.remove('flex');
 
+            const charId = e.dataTransfer.getData('text/plain');
             if (charId) {
                 const character = characters.find(c => c.id == charId);
                 if (!character) return;
@@ -561,10 +566,6 @@
                 createCharacterOnCanvas(character, x, y);
 
             } else if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                dragCounter = 0;
-                dropOverlay.classList.add('hidden');
-                dropOverlay.classList.remove('flex');
-
                 const file = e.dataTransfer.files[0];
                 if (file.type === "application/json") {
                     const reader = new FileReader();
