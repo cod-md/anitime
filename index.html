@@ -243,9 +243,13 @@
             e.stopPropagation();
 
             let currentMode = 'none';
+
+            // Timeline drawing is always initiated with Shift.
             if (e.shiftKey && !e.touches) {
                 currentMode = 'timeline';
-            } else if (charElement.classList.contains('reposition-mode')) {
+            } 
+            // Repositioning is initiated with dblclick OR if no timeline exists yet.
+            else if (charElement.classList.contains('reposition-mode') || !charElement.timeline) {
                 currentMode = 'reposition';
             }
 
@@ -255,7 +259,7 @@
 
             charElement.classList.add('dragging');
 
-            if (!charElement.timeline) {
+            if (currentMode === 'timeline' && !charElement.timeline) {
                 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 path.setAttribute('stroke', charElement.dataset.color);
                 path.setAttribute('stroke-width', '12');
@@ -279,11 +283,11 @@
                 timeline: charElement.timeline,
                 offsetX: (coords.x - rect.left) / scale,
                 offsetY: (coords.y - rect.top) / scale,
-                lastPreviewPoints: [...charElement.timeline.points],
+                lastPreviewPoints: charElement.timeline ? [...charElement.timeline.points] : null,
                 mode: currentMode,
                 originalTop: parseFloat(charElement.style.top),
                 originalLeft: parseFloat(charElement.style.left),
-                originalPoints: [...charElement.timeline.points]
+                originalPoints: charElement.timeline ? [...charElement.timeline.points] : null
             };
         }
 
@@ -337,13 +341,16 @@
                 activeDrag.element.style.left = `${newLeft}px`;
                 activeDrag.element.style.top = `${snappedTop}px`;
 
-                const newPoints = activeDrag.originalPoints.map(p => ({
-                    x: p.x + deltaX,
-                    y: p.y + deltaY
-                }));
+                // Only move timeline path if it exists
+                if (activeDrag.timeline) {
+                    const newPoints = activeDrag.originalPoints.map(p => ({
+                        x: p.x + deltaX,
+                        y: p.y + deltaY
+                    }));
 
-                activeDrag.timeline.path.setAttribute('d', generatePathD(newPoints));
-                activeDrag.lastPreviewPoints = newPoints;
+                    activeDrag.timeline.path.setAttribute('d', generatePathD(newPoints));
+                    activeDrag.lastPreviewPoints = newPoints;
+                }
             }
         }
 
@@ -355,7 +362,12 @@
             }
 
             activeDrag.element.classList.remove('dragging');
-            activeDrag.timeline.points = activeDrag.lastPreviewPoints;
+            
+            // Only update points if a timeline exists and was being modified
+            if (activeDrag.timeline) {
+                activeDrag.timeline.points = activeDrag.lastPreviewPoints;
+            }
+            
             activeDrag = null;
         }
 
