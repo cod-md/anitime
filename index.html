@@ -227,10 +227,15 @@
             const currentX = (coords.x - containerRect.left - pan.x) / scale;
             const currentY = (coords.y - containerRect.top - pan.y) / scale;
             
-            const newLeft = currentX - activeDrag.offsetX;
+            let newLeft = currentX - activeDrag.offsetX;
             const rawTop = currentY - activeDrag.offsetY;
             const snappedCenterY = Math.round((rawTop + CHARACTER_HALF_SIZE) / SHELF_HEIGHT) * SHELF_HEIGHT;
             const snappedTop = snappedCenterY - CHARACTER_HALF_SIZE;
+
+            // --- NEW: Prevent moving character backward from the last point ---
+            const lastCommittedPoint = activeDrag.timeline.points[activeDrag.timeline.points.length - 1];
+            const lastCommittedLeft = lastCommittedPoint.x - CHARACTER_HALF_SIZE;
+            newLeft = Math.max(newLeft, lastCommittedLeft);
             
             activeDrag.element.style.left = `${newLeft}px`;
             activeDrag.element.style.top = `${snappedTop}px`;
@@ -240,29 +245,8 @@
                 y: snappedTop + CHARACTER_HALF_SIZE
             };
 
+            // Start with the committed points, no shrinking logic needed
             let previewPoints = [...activeDrag.timeline.points];
-
-            // --- Shrinking Logic: Remove points if dragging backward past corners ---
-            while (previewPoints.length >= 2) {
-                const p1 = previewPoints[previewPoints.length - 2];
-                const p2 = previewPoints[previewPoints.length - 1];
-
-                if (p1.y === p2.y) { // Last segment is horizontal
-                    if (currentPos.y !== p1.y) break;
-                    const dragDir = Math.sign(currentPos.x - p1.x);
-                    const segmentDir = Math.sign(p2.x - p1.x);
-                    if (dragDir !== segmentDir && segmentDir !== 0) {
-                        previewPoints.pop();
-                    } else { break; }
-                } else { // Last segment is vertical
-                    if (currentPos.x !== p1.x) break;
-                    const dragDir = Math.sign(currentPos.y - p1.y);
-                    const segmentDir = Math.sign(p2.y - p1.y);
-                    if (dragDir !== segmentDir && segmentDir !== 0) {
-                        previewPoints.pop();
-                    } else { break; }
-                }
-            }
 
             // --- Extending Logic: Draw preview path from the last point ---
             const lastCorner = previewPoints[previewPoints.length - 1];
@@ -332,7 +316,7 @@
             charElement.dataset.color = character.color;
             
             const img = document.createElement('img');
-            img.src = character.imageUrl;
+img.src = character.imageUrl;
             img.style.borderColor = character.color;
 
             charElement.appendChild(img);
