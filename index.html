@@ -135,10 +135,30 @@
             background-color: #f59e0b; /* amber-500 */
             color: white;
         }
+        #red-cross-btn.active {
+            background-color: #ef4444; /* red-500 */
+            color: white;
+        }
         .highlight-rect {
             position: absolute;
             pointer-events: none;
             z-index: 0; /* Below characters and timelines */
+        }
+        .red-cross-marker {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            z-index: 5; /* Above highlights, below characters */
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .red-cross-marker svg {
+            width: 80%;
+            height: 80%;
+            stroke: #ef4444; /* red-500 */
+            stroke-width: 8;
         }
         #highlight-color-picker {
              -webkit-appearance: none;
@@ -182,6 +202,9 @@
                 </button>
                 <input type="color" id="highlight-color-picker" value="#FFEB3B" class="w-8 h-8 cursor-pointer">
             </div>
+            <button id="red-cross-btn" title="Place a Red Cross Marker" class="p-3 bg-white dark:bg-gray-700 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
         </div>
         <div id="drop-overlay" class="absolute inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center pointer-events-none z-50">
             <div class="text-center p-10 border-4 border-dashed border-white rounded-lg">
@@ -252,6 +275,7 @@
         const timelineModeBtn = document.getElementById('timeline-mode-btn');
         const highlightModeBtn = document.getElementById('highlight-mode-btn');
         const highlightColorPicker = document.getElementById('highlight-color-picker');
+        const redCrossBtn = document.getElementById('red-cross-btn');
 
         const SHELF_HEIGHT = 100;
         const CHARACTER_SIZE = 70;
@@ -270,7 +294,7 @@
         let isPinching = false;
         let initialPinchDistance = 0;
         
-        let activeTool = 'pan'; // 'pan', 'timeline', 'highlight'
+        let activeTool = 'pan'; // 'pan', 'timeline', 'highlight', 'redCross'
         let highlightColor = '#FFEB3B';
         let isDrawingHighlight = false;
         let highlightStartPoint = { x: 0, y: 0 };
@@ -298,8 +322,8 @@
         function dragCharacterStart(e, charElement) {
             e.stopPropagation();
 
-            if (activeTool === 'highlight') {
-                return; // Do not allow character dragging in highlight mode
+            if (activeTool !== 'pan' && activeTool !== 'timeline') {
+                return; 
             }
 
             let currentMode = 'none';
@@ -401,7 +425,6 @@
                 activeDrag.element.style.left = `${newLeft}px`;
                 activeDrag.element.style.top = `${snappedTop}px`;
 
-                // Only move timeline path if it exists
                 if (activeDrag.timeline) {
                     const newPoints = activeDrag.originalPoints.map(p => ({
                         x: p.x + deltaX,
@@ -435,6 +458,12 @@
                 isPanning = false; 
                 isPinching = true; 
                 initialPinchDistance = getPinchDistance(e); 
+            } else if (activeTool === 'redCross' && (e.target === canvasContainer || e.target === canvas)) {
+                const coords = getEventCoords(e);
+                const containerRect = canvasContainer.getBoundingClientRect();
+                const x = (coords.x - containerRect.left - pan.x) / scale;
+                const y = (coords.y - containerRect.top - pan.y) / scale;
+                createRedCross(x, y);
             } else if (activeTool === 'highlight' && (e.target === canvasContainer || e.target === canvas)) {
                 isDrawingHighlight = true;
                 const coords = getEventCoords(e);
@@ -533,6 +562,7 @@
                 activeTool = 'timeline';
                 timelineModeBtn.classList.add('active');
                 highlightModeBtn.classList.remove('active');
+                redCrossBtn.classList.remove('active');
                 document.querySelectorAll('.character-on-canvas.reposition-mode').forEach(el => el.classList.remove('reposition-mode'));
             }
         });
@@ -545,6 +575,20 @@
                 activeTool = 'highlight';
                 highlightModeBtn.classList.add('active');
                 timelineModeBtn.classList.remove('active');
+                redCrossBtn.classList.remove('active');
+                document.querySelectorAll('.character-on-canvas.reposition-mode').forEach(el => el.classList.remove('reposition-mode'));
+            }
+        });
+        
+        redCrossBtn.addEventListener('click', () => {
+             if (activeTool === 'redCross') {
+                activeTool = 'pan';
+                redCrossBtn.classList.remove('active');
+            } else {
+                activeTool = 'redCross';
+                redCrossBtn.classList.add('active');
+                timelineModeBtn.classList.remove('active');
+                highlightModeBtn.classList.remove('active');
                 document.querySelectorAll('.character-on-canvas.reposition-mode').forEach(el => el.classList.remove('reposition-mode'));
             }
         });
@@ -631,6 +675,27 @@
                 }
             }
         }
+        
+        function createRedCross(x, y, restoredState = null) {
+            const marker = document.createElement('div');
+            marker.className = 'red-cross-marker';
+            marker.innerHTML = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><line x1="10" y1="10" x2="90" y2="90" /><line x1="90" y1="10" x2="10" y2="90" /></svg>`;
+
+            if (restoredState) {
+                marker.style.left = restoredState.left;
+                marker.style.top = restoredState.top;
+            } else {
+                const left = x - CHARACTER_HALF_SIZE;
+                const rawTop = y - CHARACTER_HALF_SIZE;
+                const snappedShelfY = Math.round((rawTop + CHARACTER_SIZE) / SHELF_HEIGHT) * SHELF_HEIGHT;
+                const snappedTop = snappedShelfY - CHARACTER_SIZE;
+                
+                marker.style.left = `${left}px`;
+                marker.style.top = `${snappedTop}px`;
+            }
+            
+            canvas.appendChild(marker);
+        }
 
         // --- SAVE/LOAD LOGIC ---
         function downloadCanvasState() {
@@ -655,10 +720,19 @@
                 });
             });
 
+            const redCrosses = [];
+            document.querySelectorAll('.red-cross-marker').forEach(marker => {
+                redCrosses.push({
+                    left: marker.style.left,
+                    top: marker.style.top,
+                });
+            });
+
             const state = {
                 characterLibrary: characters,
                 charactersOnCanvas: canvasCharacters,
                 highlights: highlights,
+                redCrosses: redCrosses,
                 viewState: { pan, scale }
             };
 
@@ -688,6 +762,12 @@
                     rect.style.height = h.height;
                     rect.style.backgroundColor = h.backgroundColor;
                     canvas.appendChild(rect);
+                });
+            }
+            
+            if (state.redCrosses) {
+                state.redCrosses.forEach(crossState => {
+                    createRedCross(0, 0, crossState);
                 });
             }
 
