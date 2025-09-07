@@ -60,7 +60,6 @@
             z-index: 1;
         }
 
-        /* ADDED for reposition mode visual feedback */
         .character-on-canvas.reposition-mode {
             border-radius: 0.5rem; /* Match the image radius */
             animation: pulse 2s infinite;
@@ -105,6 +104,28 @@
         .toast.show {
             visibility: visible;
             opacity: 1;
+        }
+        .delete-char-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 24px;
+            height: 24px;
+            background-color: #ef4444; /* red-500 */
+            color: white;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 1;
+            cursor: pointer;
+            border: 2px solid white;
+            z-index: 11;
+        }
+        .character-on-canvas:hover .delete-char-btn {
+            display: flex;
         }
     </style>
 </head>
@@ -395,6 +416,26 @@
             img.src = character.imageUrl;
             img.style.borderColor = character.color;
             charElement.appendChild(img);
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-char-btn';
+            deleteBtn.innerHTML = '&times;';
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // Remove timeline SVG
+                if (charElement.timeline && charElement.timeline.svg) {
+                    charElement.timeline.svg.remove();
+                }
+                // Remove character element
+                charElement.remove();
+                // Show character in the list again
+                const listItem = document.querySelector(`.character-list-item[data-character-id='${character.id}']`);
+                if (listItem) {
+                    listItem.style.display = 'flex';
+                }
+            });
+            charElement.appendChild(deleteBtn);
+
             canvas.appendChild(charElement);
             
             charElement.addEventListener('mousedown', (e) => dragCharacterStart(e, charElement));
@@ -420,6 +461,13 @@
                 svg.appendChild(path);
                 canvas.insertBefore(svg, canvas.firstChild);
                 charElement.timeline = { svg: svg, path: path, points: restoredState.timelinePoints };
+            }
+
+            if (!restoredState) {
+                 const listItem = document.querySelector(`.character-list-item[data-character-id='${character.id}']`);
+                if (listItem) {
+                    listItem.style.display = 'none';
+                }
             }
         }
 
@@ -466,6 +514,15 @@
                     createCharacterOnCanvas(character, 0, 0, charState);
                 }
             });
+
+            // After restoring, hide the list items for characters on the canvas
+            document.querySelectorAll('.character-on-canvas').forEach(charOnCanvas => {
+                const id = charOnCanvas.dataset.characterId;
+                const listItem = document.querySelector(`.character-list-item[data-character-id='${id}']`);
+                if (listItem) {
+                    listItem.style.display = 'none';
+                }
+            });
         }
 
         downloadBtn.addEventListener('click', downloadCanvasState);
@@ -493,8 +550,17 @@
         
         canvasContainer.addEventListener('drop', (e) => {
             e.preventDefault();
+            const charId = e.dataTransfer.getData('text/plain');
 
-            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            if (charId) {
+                const character = characters.find(c => c.id == charId);
+                if (!character) return;
+                const containerRect = canvasContainer.getBoundingClientRect();
+                const x = (e.clientX - containerRect.left - pan.x) / scale;
+                const y = (e.clientY - containerRect.top - pan.y) / scale;
+                createCharacterOnCanvas(character, x, y);
+
+            } else if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                 dragCounter = 0;
                 dropOverlay.classList.add('hidden');
                 dropOverlay.classList.remove('flex');
@@ -518,16 +584,7 @@
                 } else {
                     showToast("Please drop a valid .json file.");
                 }
-                return;
             }
-
-            const charId = e.dataTransfer.getData('text/plain');
-            const character = characters.find(c => c.id == charId);
-            if (!character) return;
-            const containerRect = canvasContainer.getBoundingClientRect();
-            const x = (e.clientX - containerRect.left - pan.x) / scale;
-            const y = (e.clientY - containerRect.top - pan.y) / scale;
-            createCharacterOnCanvas(character, x, y);
         });
 
         function startListDrag(e, element, charId) { const ghost = element.cloneNode(true); ghost.id = 'ghost-element'; document.body.appendChild(ghost); const coords = getEventCoords(e); ghost.style.left = `${coords.x - ghost.offsetWidth / 2}px`; ghost.style.top = `${coords.y - ghost.offsetHeight / 2}px`; listDrag = { ghost, charId }; window.addEventListener('touchmove', moveListDrag, { passive: false }); window.addEventListener('touchend', endListDrag, { once: true }); }
