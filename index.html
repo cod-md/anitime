@@ -16,9 +16,8 @@
         }
         #canvas-container {
             cursor: grab;
-            /* UPDATED: White background with horizontal shelf lines */
-            background-image: linear-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px);
             background-size: 100% 100px; /* Shelf lines are 100px apart */
+            transition: background-image 0.3s ease-in-out;
         }
         #canvas-container:active {
             cursor: grabbing;
@@ -87,37 +86,43 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 h-screen w-screen overflow-hidden flex flex-col">
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 h-screen w-screen overflow-hidden flex flex-col transition-colors duration-300">
 
     <!-- Main Canvas Area -->
-    <div id="canvas-container" class="relative w-full h-full flex-grow overflow-hidden bg-white">
+    <div id="canvas-container" class="relative w-full h-full flex-grow overflow-hidden bg-white dark:bg-gray-800">
         <div id="canvas" class="absolute top-0 left-0">
             <!-- Timelines (SVG) and Characters will be added here -->
         </div>
     </div>
 
     <!-- Bottom Control Panel -->
-    <div class="bg-gray-50 border-t border-gray-200 shadow-lg p-2 md:p-3 w-full z-10 flex-shrink-0">
+    <div class="bg-gray-50 dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 shadow-lg p-2 md:p-3 w-full z-10 flex-shrink-0 transition-colors duration-300">
         <div class="max-w-7xl mx-auto">
-            <details class="bg-white rounded-lg border border-gray-200">
-                <summary class="p-2 cursor-pointer font-bold text-center text-gray-700">إضافة شخصية جديدة</summary>
-                <form id="add-character-form" class="flex flex-col md:flex-row items-center gap-3 p-3 border-t border-gray-200">
-                    <input type="text" id="char-name" placeholder="اسم الشخصية" class="bg-gray-100 border border-gray-300 text-gray-900 p-2 rounded-md w-full md:w-auto flex-grow focus:ring-2 focus:ring-indigo-500" required>
-                    <div class="flex items-center gap-2">
-                         <label for="char-image" class="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-md text-sm whitespace-nowrap">اختر صورة</label>
-                        <input type="file" id="char-image" accept="image/*" class="hidden" required>
-                        <span id="file-name" class="text-xs text-gray-500 max-w-[100px] truncate">لم يتم اختيار ملف</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <label for="char-color" class="text-sm">اللون</label>
-                        <input type="color" id="char-color" value="#ff0000" class="w-10 h-10 rounded-md border-2 border-gray-200 cursor-pointer">
-                    </div>
-                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-md font-bold w-full md:w-auto">إضافة</button>
-                </form>
-            </details>
+             <div class="flex justify-between items-center">
+                <details class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 flex-grow">
+                    <summary class="p-2 cursor-pointer font-bold text-center text-gray-700 dark:text-gray-300">إضافة شخصية جديدة</summary>
+                    <form id="add-character-form" class="flex flex-col md:flex-row items-center gap-3 p-3 border-t border-gray-200 dark:border-gray-700">
+                        <input type="text" id="char-name" placeholder="اسم الشخصية" class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 p-2 rounded-md w-full md:w-auto flex-grow focus:ring-2 focus:ring-indigo-500" required>
+                        <div class="flex items-center gap-2">
+                             <label for="char-image" class="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-md text-sm whitespace-nowrap">اختر صورة</label>
+                            <input type="file" id="char-image" accept="image/*" class="hidden" required>
+                            <span id="file-name" class="text-xs text-gray-500 dark:text-gray-400 max-w-[100px] truncate">لم يتم اختيار ملف</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label for="char-color" class="text-sm">اللون</label>
+                            <input type="color" id="char-color" value="#ff0000" class="w-10 h-10 rounded-md border-2 border-gray-200 dark:border-gray-700 cursor-pointer">
+                        </div>
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-md font-bold w-full md:w-auto">إضافة</button>
+                    </form>
+                </details>
+                <button id="theme-toggle" type="button" class="ms-3 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600">
+                    <svg id="theme-toggle-dark-icon" class="hidden w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                    <svg id="theme-toggle-light-icon" class="hidden w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.121-3.536a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM10 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm-4.464-3.05a1 1 0 00-1.414 1.414l.707.707a1 1 0 001.414-1.414l-.707-.707zm-2.121-3.536a1 1 0 01.707-.293h1.414a1 1 0 110 2H4.222a1 1 0 01-.707-1.707z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+                </button>
+            </div>
 
-            <div id="character-list-container" class="mt-2 bg-white p-2 rounded-lg border border-gray-200">
-                <h3 class="text-center font-semibold text-sm mb-2 text-gray-600">قائمة الشخصيات (اسحب شخصية إلى اللوحة)</h3>
+            <div id="character-list-container" class="mt-2 bg-white dark:bg-gray-900 p-2 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors duration-300">
+                <h3 class="text-center font-semibold text-sm mb-2 text-gray-600 dark:text-gray-400">قائمة الشخصيات (اسحب شخصية إلى اللوحة)</h3>
                  <div id="character-list" class="flex gap-4 overflow-x-auto p-2 min-h-[90px] items-center justify-start">
                      <p id="empty-list-msg" class="text-gray-500 w-full text-center">لم تتم إضافة أي شخصيات بعد.</p>
                  </div>
@@ -175,12 +180,8 @@
             return `${start} ${rest}`;
         }
 
-        // --- UPDATED DRAG AND TIMELINE LOGIC ---
-
         function dragCharacterStart(e, charElement) {
             e.stopPropagation();
-
-            // Create timeline objects on the character's first drag
             if (!charElement.timeline) {
                 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 path.setAttribute('stroke', charElement.dataset.color);
@@ -188,34 +189,16 @@
                 path.setAttribute('stroke-linecap', 'round');
                 path.setAttribute('stroke-linejoin', 'round');
                 path.setAttribute('fill', 'none');
-                
                 const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                 svg.classList.add('timeline-svg');
                 svg.appendChild(path);
                 canvas.insertBefore(svg, canvas.firstChild);
-
-                const startPos = {
-                    x: parseFloat(charElement.style.left) + CHARACTER_HALF_SIZE,
-                    y: parseFloat(charElement.style.top) + CHARACTER_HALF_SIZE
-                };
-
-                charElement.timeline = {
-                    svg: svg,
-                    path: path,
-                    points: [startPos]
-                };
+                const startPos = { x: parseFloat(charElement.style.left) + CHARACTER_HALF_SIZE, y: parseFloat(charElement.style.top) + CHARACTER_HALF_SIZE };
+                charElement.timeline = { svg: svg, path: path, points: [startPos] };
             }
-            
             const coords = getEventCoords(e);
             const rect = charElement.getBoundingClientRect();
-
-            activeDrag = {
-                element: charElement,
-                timeline: charElement.timeline,
-                offsetX: (coords.x - rect.left) / scale,
-                offsetY: (coords.y - rect.top) / scale,
-                lastPreviewPoints: [...charElement.timeline.points] // Start drag with a copy of existing points
-            };
+            activeDrag = { element: charElement, timeline: charElement.timeline, offsetX: (coords.x - rect.left) / scale, offsetY: (coords.y - rect.top) / scale, lastPreviewPoints: [...charElement.timeline.points] };
         }
 
         function dragCharacterMove(e) {
@@ -223,40 +206,24 @@
             e.preventDefault();
             const coords = getEventCoords(e);
             const containerRect = canvasContainer.getBoundingClientRect();
-
             const currentX = (coords.x - containerRect.left - pan.x) / scale;
             const currentY = (coords.y - containerRect.top - pan.y) / scale;
-            
             let newLeft = currentX - activeDrag.offsetX;
             const rawTop = currentY - activeDrag.offsetY;
             const snappedCenterY = Math.round((rawTop + CHARACTER_HALF_SIZE) / SHELF_HEIGHT) * SHELF_HEIGHT;
             const snappedTop = snappedCenterY - CHARACTER_HALF_SIZE;
-
-            // --- NEW: Prevent moving character backward from the last point ---
             const lastCommittedPoint = activeDrag.timeline.points[activeDrag.timeline.points.length - 1];
             const lastCommittedLeft = lastCommittedPoint.x - CHARACTER_HALF_SIZE;
             newLeft = Math.max(newLeft, lastCommittedLeft);
-            
             activeDrag.element.style.left = `${newLeft}px`;
             activeDrag.element.style.top = `${snappedTop}px`;
-
-            const currentPos = {
-                x: newLeft + CHARACTER_HALF_SIZE,
-                y: snappedTop + CHARACTER_HALF_SIZE
-            };
-
-            // Start with the committed points, no shrinking logic needed
+            const currentPos = { x: newLeft + CHARACTER_HALF_SIZE, y: snappedTop + CHARACTER_HALF_SIZE };
             let previewPoints = [...activeDrag.timeline.points];
-
-            // --- Extending Logic: Draw preview path from the last point ---
             const lastCorner = previewPoints[previewPoints.length - 1];
-            
             if (currentPos.y !== lastCorner.y) {
                 previewPoints.push({ x: lastCorner.x, y: currentPos.y });
             }
             previewPoints.push(currentPos);
-
-            // Clean up duplicate points
             if (previewPoints.length > 1) {
                 const last = previewPoints[previewPoints.length - 1];
                 const secondLast = previewPoints[previewPoints.length - 2];
@@ -264,22 +231,17 @@
                     previewPoints.pop();
                 }
             }
-            
             activeDrag.timeline.path.setAttribute('d', generatePathD(previewPoints));
             activeDrag.lastPreviewPoints = previewPoints;
         }
 
         function dragCharacterEnd() {
             if (!activeDrag) return;
-
-            // Commit the final calculated points to the character's permanent timeline
             activeDrag.timeline.points = activeDrag.lastPreviewPoints;
             activeDrag.timeline.path.setAttribute('d', generatePathD(activeDrag.timeline.points));
-            
             activeDrag = null;
         }
 
-        // --- Global Event Handlers for Pan, Zoom, and Drag (unchanged) ---
         function onPointerDown(e) { if (e.touches && e.touches.length === 2) { isPanning = false; isPinching = true; initialPinchDistance = getPinchDistance(e); } else if (e.target === canvasContainer || e.target === canvas) { isPanning = true; const coords = getEventCoords(e); panStartPoint.x = coords.x - pan.x; panStartPoint.y = coords.y - pan.y; canvasContainer.style.cursor = 'grabbing'; } }
         function onPointerMove(e) { if (isPinching && e.touches && e.touches.length === 2) { const newDist = getPinchDistance(e); const scaleFactor = newDist / initialPinchDistance; const oldScale = scale; scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * scaleFactor)); const center = getPinchCenter(e); pan.x = center.x - (center.x - pan.x) * (scale / oldScale); pan.y = center.y - (center.y - pan.y) * (scale / oldScale); updateTransform(); initialPinchDistance = newDist; } else if (isPanning) { const coords = getEventCoords(e); pan.x = coords.x - panStartPoint.x; pan.y = coords.y - panStartPoint.y; updateTransform(); } else if (activeDrag) { dragCharacterMove(e); } }
         function onPointerUp(e) { if (isPinching && (!e.touches || e.touches.length < 2)) { isPinching = false; } if (isPanning) { isPanning = false; canvasContainer.style.cursor = 'grab'; } if (activeDrag) dragCharacterEnd(); }
@@ -294,42 +256,78 @@
         window.addEventListener('touchend', onPointerUp);
         window.addEventListener('touchcancel', onPointerUp);
         
-        // --- Character Creation & List (unchanged) ---
         function showToast(message){ toastMessage.textContent = message; toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3000); }
         charImageInput.addEventListener('change', () => { fileNameSpan.textContent = charImageInput.files.length > 0 ? charImageInput.files[0].name : 'لم يتم اختيار ملف'; });
         addCharacterForm.addEventListener('submit', (e) => { e.preventDefault(); const name = charNameInput.value; const color = charColorInput.value; const imageFile = charImageInput.files[0]; if (!name || !imageFile) { showToast("الرجاء إدخال اسم واختيار صورة للشخصية."); return; } const reader = new FileReader(); reader.onload = (event) => { characters.push({ id: Date.now(), name: name, color: color, imageUrl: event.target.result }); renderCharacterList(); addCharacterForm.reset(); fileNameSpan.textContent = 'لم يتم اختيار ملف'; document.querySelector('details').open = false; }; reader.readAsDataURL(imageFile); });
         function renderCharacterList(){ characterList.innerHTML = ''; if (characters.length === 0) { characterList.appendChild(emptyListMsg); return; } characters.forEach(char => { const charDiv = document.createElement('div'); charDiv.className = 'flex flex-col items-center gap-1 character-list-item w-20 flex-shrink-0'; charDiv.draggable = true; charDiv.dataset.characterId = char.id; const img = document.createElement('img'); img.src = char.imageUrl; img.className = 'w-16 h-16 rounded-full object-cover border-2'; img.style.borderColor = char.color; const nameSpan = document.createElement('span'); nameSpan.className = 'text-xs text-center truncate w-full'; nameSpan.textContent = char.name; charDiv.appendChild(img); charDiv.appendChild(nameSpan); charDiv.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', char.id)); charDiv.addEventListener('touchstart', (e) => { e.preventDefault(); startListDrag(e, charDiv, char.id); }, { passive: false }); characterList.appendChild(charDiv); }); }
         
-        // --- Drag and Drop to Canvas (updated) ---
         canvasContainer.addEventListener('dragover', (e) => e.preventDefault());
         canvasContainer.addEventListener('drop', (e) => { e.preventDefault(); const charId = e.dataTransfer.getData('text/plain'); const character = characters.find(c => c.id == charId); if (!character) return; const containerRect = canvasContainer.getBoundingClientRect(); const x = (e.clientX - containerRect.left - pan.x) / scale; const y = (e.clientY - containerRect.top - pan.y) / scale; createCharacterOnCanvas(character, x, y); });
 
         function createCharacterOnCanvas(character, x, y) {
             const charElement = document.createElement('div');
             charElement.className = 'character-on-canvas';
-            
             const snappedCenterY = Math.round((y) / SHELF_HEIGHT) * SHELF_HEIGHT;
             const snappedTop = snappedCenterY - CHARACTER_HALF_SIZE;
-            
             charElement.style.left = `${x - CHARACTER_HALF_SIZE}px`;
             charElement.style.top = `${snappedTop}px`;
             charElement.dataset.color = character.color;
-            
             const img = document.createElement('img');
-img.src = character.imageUrl;
+            img.src = character.imageUrl;
             img.style.borderColor = character.color;
-
             charElement.appendChild(img);
             canvas.appendChild(charElement);
-
             charElement.addEventListener('mousedown', (e) => dragCharacterStart(e, charElement));
             charElement.addEventListener('touchstart', (e) => dragCharacterStart(e, charElement), { passive: false });
         }
         
-        // --- Mobile Drag from List (unchanged) ---
         function startListDrag(e, element, charId) { const ghost = element.cloneNode(true); ghost.id = 'ghost-element'; document.body.appendChild(ghost); const coords = getEventCoords(e); ghost.style.left = `${coords.x - ghost.offsetWidth / 2}px`; ghost.style.top = `${coords.y - ghost.offsetHeight / 2}px`; listDrag = { ghost, charId }; window.addEventListener('touchmove', moveListDrag, { passive: false }); window.addEventListener('touchend', endListDrag, { once: true }); }
         function moveListDrag(e) { if (!listDrag) return; e.preventDefault(); const coords = getEventCoords(e); listDrag.ghost.style.left = `${coords.x - listDrag.ghost.offsetWidth / 2}px`; listDrag.ghost.style.top = `${coords.y - listDrag.ghost.offsetHeight / 2}px`; }
         function endListDrag(e) { if (!listDrag) return; window.removeEventListener('touchmove', moveListDrag); listDrag.ghost.remove(); const touch = e.changedTouches[0]; const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY); if (dropTarget === canvasContainer) { const character = characters.find(c => c.id == listDrag.charId); if (character) { const containerRect = canvasContainer.getBoundingClientRect(); const x = (touch.clientX - containerRect.left - pan.x) / scale; const y = (touch.clientY - containerRect.top - pan.y) / scale; createCharacterOnCanvas(character, x, y); } } listDrag = null; }
+
+        // --- DARK MODE LOGIC ---
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+        const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+
+        function updateCanvasBackground() {
+            if (document.documentElement.classList.contains('dark')) {
+                canvasContainer.style.backgroundImage = 'linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px)';
+            } else {
+                canvasContainer.style.backgroundImage = 'linear-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px)';
+            }
+        }
+
+        function updateToggleIcon() {
+            if (document.documentElement.classList.contains('dark')) {
+                themeToggleLightIcon.classList.remove('hidden');
+                themeToggleDarkIcon.classList.add('hidden');
+            } else {
+                themeToggleDarkIcon.classList.remove('hidden');
+                themeToggleLightIcon.classList.add('hidden');
+            }
+        }
+
+        // Apply theme on initial load
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        updateCanvasBackground();
+        updateToggleIcon();
+
+        // Add event listener for the toggle button
+        themeToggleBtn.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            if (document.documentElement.classList.contains('dark')) {
+                localStorage.setItem('theme', 'dark');
+            } else {
+                localStorage.setItem('theme', 'light');
+            }
+            updateCanvasBackground();
+            updateToggleIcon();
+        });
 
         // --- Initial Render ---
         renderCharacterList();
