@@ -186,6 +186,19 @@
         .dark #highlight-color-picker::-moz-color-swatch {
              border: 2px solid #4b5563; /* gray-600 */
         }
+        /* Spinner for loading */
+        .loader {
+            border: 4px solid #f3f3f3; /* Light grey */
+            border-top: 4px solid #3498db; /* Blue */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
     </style>
 </head>
@@ -231,15 +244,16 @@
     <!-- Bottom Control Panel -->
     <div class="bg-gray-50 dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 shadow-lg p-2 md:p-3 w-full z-10 flex-shrink-0 transition-colors duration-300">
         <div class="max-w-7xl mx-auto">
-             <div class="flex justify-between items-center">
-                <details class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 flex-grow">
-                    <summary class="p-2 cursor-pointer font-bold text-center text-gray-700 dark:text-gray-300">Add New Character</summary>
+             <div class="flex justify-between items-center mb-2">
+                <details id="add-character-details" class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 flex-grow">
+                    <summary class="p-2 cursor-pointer font-bold text-center text-gray-700 dark:text-gray-300">Add New Character (Manual)</summary>
                     <form id="add-character-form" class="flex flex-col md:flex-row items-center gap-3 p-3 border-t border-gray-200 dark:border-gray-700">
                         <input type="text" id="char-name" placeholder="Character Name" class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 p-2 rounded-md w-full md:w-auto flex-grow focus:ring-2 focus:ring-indigo-500" required>
                         <div class="flex items-center gap-2">
                              <label for="char-image" class="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-md text-sm whitespace-nowrap">Choose Image</label>
-                            <input type="file" id="char-image" accept="image/*" class="hidden" required>
+                            <input type="file" id="char-image" accept="image/*" class="hidden">
                             <span id="file-name" class="text-xs text-gray-500 dark:text-gray-400 max-w-[100px] truncate">No file chosen</span>
+                            <img id="image-preview" src="" class="w-10 h-10 rounded-md object-cover hidden">
                         </div>
                         <div class="flex items-center gap-2">
                             <label for="char-color" class="text-sm">Color</label>
@@ -257,7 +271,35 @@
                         <svg id="theme-toggle-light-icon" class="hidden w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.121-3.536a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM10 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm-4.464-3.05a1 1 0 00-1.414 1.414l.707.707a1 1 0 001.414-1.414l-.707-.707zm-2.121-3.536a1 1 0 01.707-.293h1.414a1 1 0 110 2H4.222a1 1 0 01-.707-1.707z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
                     </button>
                 </div>
-            </div>
+             </div>
+            <details class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 flex-grow mt-2">
+                <summary class="p-2 cursor-pointer font-bold text-center text-gray-700 dark:text-gray-300">Import Anime Characters from Fandom</summary>
+                <div class="p-3 border-t border-gray-200 dark:border-gray-700 space-y-3">
+                     <div id="fandom-wiki-search-section">
+                        <div class="relative">
+                            <input type="text" id="fandom-wiki-search" placeholder="Search for an Anime Wiki (e.g., One Piece)" class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 p-2 rounded-md w-full focus:ring-2 focus:ring-indigo-500 pr-10">
+                            <div id="fandom-wiki-loader" class="loader absolute right-3 top-1/2 -translate-y-1/2 hidden"></div>
+                        </div>
+                         <div id="fandom-wiki-results" class="mt-2 max-h-32 overflow-y-auto bg-gray-50 dark:bg-gray-800 rounded-md"></div>
+                    </div>
+                    <div id="fandom-character-display" class="hidden">
+                        <div class="flex justify-between items-center mb-2">
+                             <h4 id="fandom-char-list-title" class="font-bold text-lg">Characters</h4>
+                             <button id="fandom-back-btn" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">&larr; Back to Wiki Search</button>
+                        </div>
+                        <div id="fandom-character-list" class="max-h-48 overflow-y-auto bg-gray-100 dark:bg-gray-800 p-2 rounded-md border border-gray-300 dark:border-gray-600 space-y-1">
+                            <!-- Character list will be populated here -->
+                            <div class="flex items-center justify-center h-full">
+                                <div id="fandom-char-loader" class="loader"></div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 mt-2">
+                            <button id="fandom-import-selected" class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-md font-bold flex-grow">Import Selected</button>
+                            <button id="fandom-import-all" class="bg-gray-600 hover:bg-gray-700 text-white p-2 rounded-md font-bold flex-grow">Import All</button>
+                        </div>
+                    </div>
+                </div>
+            </details>
 
             <div id="character-list-container" class="mt-2 bg-white dark:bg-gray-900 p-2 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors duration-300">
                 <h3 class="text-center font-semibold text-sm mb-2 text-gray-600 dark:text-gray-400">Character List (Drag a character to the canvas)</h3>
@@ -276,12 +318,14 @@
     document.addEventListener('DOMContentLoaded', () => {
         const canvasContainer = document.getElementById('canvas-container');
         const canvas = document.getElementById('canvas');
+        const addCharacterDetails = document.getElementById('add-character-details');
         const addCharacterForm = document.getElementById('add-character-form');
         const charNameInput = document.getElementById('char-name');
         const charImageInput = document.getElementById('char-image');
         const charColorInput = document.getElementById('char-color');
         const characterList = document.getElementById('character-list');
         const fileNameSpan = document.getElementById('file-name');
+        const imagePreview = document.getElementById('image-preview');
         const emptyListMsg = document.getElementById('empty-list-msg');
         const toast = document.getElementById('toast');
         const toastMessage = document.getElementById('toast-message');
@@ -294,6 +338,20 @@
         const eraserBtn = document.getElementById('eraser-btn');
         const undoBtn = document.getElementById('undo-btn');
         const redoBtn = document.getElementById('redo-btn');
+        
+        // Fandom Elements
+        const fandomWikiSearchInput = document.getElementById('fandom-wiki-search');
+        const fandomWikiLoader = document.getElementById('fandom-wiki-loader');
+        const fandomWikiResults = document.getElementById('fandom-wiki-results');
+        const fandomWikiSearchSection = document.getElementById('fandom-wiki-search-section');
+        const fandomCharacterDisplay = document.getElementById('fandom-character-display');
+        const fandomCharListTitle = document.getElementById('fandom-char-list-title');
+        const fandomBackBtn = document.getElementById('fandom-back-btn');
+        const fandomCharList = document.getElementById('fandom-character-list');
+        const fandomCharLoader = document.getElementById('fandom-char-loader');
+        const fandomImportSelectedBtn = document.getElementById('fandom-import-selected');
+        const fandomImportAllBtn = document.getElementById('fandom-import-all');
+
 
         const SHELF_HEIGHT = 100;
         const CHARACTER_SIZE = 70;
@@ -320,6 +378,7 @@
 
         let historyStack = [];
         let redoStack = [];
+        let importedImageUrl = null;
         
         function updateTransform() {
             canvas.style.transform = `translate(${pan.x}px, ${pan.y}px) scale(${scale})`;
@@ -640,8 +699,60 @@
         });
 
         function showToast(message){ toastMessage.textContent = message; toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3000); }
-        charImageInput.addEventListener('change', () => { fileNameSpan.textContent = charImageInput.files.length > 0 ? charImageInput.files[0].name : 'No file chosen'; });
-        addCharacterForm.addEventListener('submit', (e) => { e.preventDefault(); const name = charNameInput.value; const color = charColorInput.value; const imageFile = charImageInput.files[0]; if (!name || !imageFile) { showToast("Please enter a name and choose an image for the character."); return; } const reader = new FileReader(); reader.onload = (event) => { characters.push({ id: Date.now(), name: name, color: color, imageUrl: event.target.result }); renderCharacterList(); addCharacterForm.reset(); fileNameSpan.textContent = 'No file chosen'; document.querySelector('details').open = false; saveState(); }; reader.readAsDataURL(imageFile); });
+        
+        function resetAddForm() {
+            addCharacterForm.reset();
+            fileNameSpan.textContent = 'No file chosen';
+            imagePreview.src = '';
+            imagePreview.classList.add('hidden');
+            importedImageUrl = null;
+            charImageInput.value = ''; // Clear file input
+        }
+        
+        charImageInput.addEventListener('change', () => { 
+            const file = charImageInput.files[0];
+            if (file) {
+                fileNameSpan.textContent = file.name;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imagePreview.src = e.target.result;
+                    imagePreview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+                importedImageUrl = null;
+            }
+        });
+
+        addCharacterForm.addEventListener('submit', (e) => { 
+            e.preventDefault(); 
+            const name = charNameInput.value; 
+            const color = charColorInput.value; 
+            const imageFile = charImageInput.files[0]; 
+            
+            if (!name || (!imageFile && !importedImageUrl)) { 
+                showToast("Please provide a name and image for the character."); 
+                return; 
+            } 
+            
+            const addCharacter = (imageUrl) => {
+                characters.push({ id: Date.now(), name: name, color: color, imageUrl: imageUrl }); 
+                renderCharacterList(); 
+                resetAddForm();
+                document.querySelector('details').open = false; 
+                saveState(); 
+            };
+
+            if (importedImageUrl) {
+                addCharacter(importedImageUrl);
+            } else if (imageFile) {
+                const reader = new FileReader(); 
+                reader.onload = (event) => { 
+                    addCharacter(event.target.result);
+                }; 
+                reader.readAsDataURL(imageFile); 
+            }
+        });
+
         function renderCharacterList(){ characterList.innerHTML = ''; if (characters.length === 0) { emptyListMsg.style.display = 'block'; } else { emptyListMsg.style.display = 'none'; } characters.forEach(char => { const charDiv = document.createElement('div'); charDiv.className = 'flex flex-col items-center gap-1 character-list-item w-20 flex-shrink-0'; charDiv.draggable = true; charDiv.dataset.characterId = char.id; const img = document.createElement('img'); img.src = char.imageUrl; img.className = 'w-16 h-16 rounded-lg object-cover border-2'; img.style.borderColor = char.color; const nameSpan = document.createElement('span'); nameSpan.className = 'text-xs text-center truncate w-full'; nameSpan.textContent = char.name; charDiv.appendChild(img); charDiv.appendChild(nameSpan); charDiv.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', char.id)); charDiv.addEventListener('touchstart', (e) => { e.preventDefault(); startListDrag(e, charDiv, char.id); }, { passive: false }); characterList.appendChild(charDiv); }); }
         
         function createCharacterOnCanvas(character, x, y, restoredState = null) {
@@ -967,13 +1078,170 @@
             updateCanvasBackground();
             updateToggleIcon();
         });
+        
+        // --- FANDOM IMPORT LOGIC ---
+        let fandomWikiUrl = '';
+        let searchTimeout;
+
+        fandomWikiSearchInput.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            const searchTerm = fandomWikiSearchInput.value;
+            if (searchTerm.length < 3) {
+                fandomWikiResults.innerHTML = '';
+                return;
+            }
+            fandomWikiLoader.classList.remove('hidden');
+            searchTimeout = setTimeout(() => {
+                searchFandomWikis(searchTerm);
+            }, 500); // Debounce
+        });
+
+        async function searchFandomWikis(term) {
+             const apiUrl = `https://www.fandom.com/api/v1/Wikis/List?query=${encodeURIComponent(term)}&limit=10&lang=en`;
+             try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('Network error searching wikis.');
+                const data = await response.json();
+                renderFandomWikiResults(data.items);
+             } catch(error) {
+                showToast(`Wiki search failed: ${error.message}`);
+                fandomWikiResults.innerHTML = `<p class="p-2 text-sm text-red-500">Wiki search failed.</p>`;
+             } finally {
+                fandomWikiLoader.classList.add('hidden');
+             }
+        }
+        
+        function renderFandomWikiResults(wikis) {
+            fandomWikiResults.innerHTML = '';
+            if (wikis.length === 0) {
+                fandomWikiResults.innerHTML = `<p class="p-2 text-sm text-gray-500">No wikis found.</p>`;
+                return;
+            }
+            const list = document.createElement('ul');
+            wikis.forEach(wiki => {
+                const item = document.createElement('li');
+                item.className = 'p-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 text-sm flex items-center gap-2';
+                item.innerHTML = `
+                    <img src="${wiki.image}" class="w-8 h-8 rounded-sm object-cover">
+                    <span>${wiki.name}</span>
+                `;
+                item.addEventListener('click', () => selectFandomWiki(wiki));
+                list.appendChild(item);
+            });
+            fandomWikiResults.appendChild(list);
+        }
+
+        function selectFandomWiki(wiki) {
+            fandomWikiUrl = wiki.url;
+            fandomWikiSearchSection.classList.add('hidden');
+            fandomCharacterDisplay.classList.remove('hidden');
+            fandomCharListTitle.textContent = `Characters from ${wiki.name}`;
+            fetchFandomCharacters();
+        }
+
+        async function fetchFandomCharacters() {
+            fandomCharLoader.classList.remove('hidden');
+            fandomCharList.innerHTML = '';
+            const apiUrl = `${fandomWikiUrl}/api.php?action=query&list=categorymembers&cmtitle=Category:Characters&cmlimit=500&format=json&origin=*`;
+            try {
+                const response = await fetch(apiUrl);
+                if(!response.ok) throw new Error('Network error getting characters.');
+                const data = await response.json();
+                renderFandomCharacterList(data.query.categorymembers);
+            } catch(error) {
+                showToast(`Character fetch failed: ${error.message}`);
+                fandomCharList.innerHTML = `<p class="p-2 text-sm text-red-500">Could not load characters. This wiki might not use "Category:Characters".</p>`;
+            } finally {
+                fandomCharLoader.classList.add('hidden');
+            }
+        }
+
+        function renderFandomCharacterList(charList) {
+             if (charList.length === 0) {
+                fandomCharList.innerHTML = `<p class="p-2 text-sm text-gray-500">No characters found in the category.</p>`;
+                return;
+            }
+            const list = document.createElement('div');
+            list.className = "space-y-1";
+            charList.forEach(char => {
+                const label = document.createElement('label');
+                label.className = 'flex items-center gap-2 p-1 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-sm';
+                label.innerHTML = `
+                    <input type="checkbox" class="rounded" value="${char.title}">
+                    <span>${char.title}</span>
+                `;
+                list.appendChild(label);
+            });
+            fandomCharList.appendChild(list);
+        }
+        
+        fandomBackBtn.addEventListener('click', () => {
+             fandomCharacterDisplay.classList.add('hidden');
+             fandomWikiSearchSection.classList.remove('hidden');
+             fandomWikiResults.innerHTML = '';
+             fandomWikiSearchInput.value = '';
+        });
+
+        async function importCharacters(titles) {
+            if (titles.length === 0) {
+                showToast("No characters selected.");
+                return;
+            }
+            fandomCharLoader.classList.remove('hidden');
+            
+            const CHUNK_SIZE = 50; // Fandom API limit
+            let importedCount = 0;
+            
+            for (let i = 0; i < titles.length; i += CHUNK_SIZE) {
+                const chunk = titles.slice(i, i + CHUNK_SIZE);
+                const apiUrl = `${fandomWikiUrl}/api.php?action=query&prop=pageimages&titles=${chunk.map(encodeURIComponent).join('|')}&pithumbsize=200&format=json&origin=*`;
+                
+                try {
+                    const response = await fetch(apiUrl);
+                    if (!response.ok) continue; // Skip chunk on error
+                    const data = await response.json();
+                    const pages = data.query.pages;
+                    
+                    for (const pageId in pages) {
+                        const page = pages[pageId];
+                        if (page.thumbnail && page.thumbnail.source) {
+                            const newChar = {
+                                id: Date.now() + Math.random(),
+                                name: page.title,
+                                imageUrl: page.thumbnail.source,
+                                color: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'),
+                            };
+                            characters.push(newChar);
+                            importedCount++;
+                        }
+                    }
+                } catch (error) {
+                    console.error("Failed to import a chunk of characters:", error);
+                }
+            }
+            
+            fandomCharLoader.classList.add('hidden');
+            renderCharacterList();
+            saveState();
+            showToast(`Successfully imported ${importedCount} characters!`);
+        }
+
+        fandomImportSelectedBtn.addEventListener('click', () => {
+            const selectedTitles = Array.from(fandomCharList.querySelectorAll('input:checked')).map(input => input.value);
+            importCharacters(selectedTitles);
+        });
+        fandomImportAllBtn.addEventListener('click', () => {
+             const allTitles = Array.from(fandomCharList.querySelectorAll('input[type="checkbox"]')).map(input => input.value);
+            importCharacters(allTitles);
+        });
+
 
         // --- KEYBOARD SHORTCUTS ---
         window.addEventListener('keydown', (e) => {
             if (e.ctrlKey && e.key === 'z') {
                 e.preventDefault();
                 undo();
-            } else if (e.ctrlKey && e.shiftKey && e.key === 'Z') {
+            } else if (e.ctrlKey && e.shiftKey && (e.key === 'Z' || e.key === 'y')) {
                 e.preventDefault();
                 redo();
             }
