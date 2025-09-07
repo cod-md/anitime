@@ -127,6 +127,10 @@
         .character-on-canvas:hover .delete-char-btn {
             display: flex;
         }
+        #timeline-mode-btn.active {
+            background-color: #4f46e5; /* indigo-600 */
+            color: white;
+        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 h-screen w-screen overflow-hidden flex flex-col transition-colors duration-300">
@@ -136,6 +140,9 @@
         <div id="canvas" class="absolute top-0 left-0">
             <!-- Timelines (SVG) and Characters will be added here -->
         </div>
+        <button id="timeline-mode-btn" title="Toggle Timeline Drawing Mode" class="absolute top-4 left-4 z-20 p-3 bg-white dark:bg-gray-700 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </button>
         <div id="drop-overlay" class="absolute inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center pointer-events-none z-50">
             <div class="text-center p-10 border-4 border-dashed border-white rounded-lg">
                 <p class="text-white text-2xl font-bold">Drop your JSON file here to load</p>
@@ -202,6 +209,7 @@
         const toastMessage = document.getElementById('toast-message');
         const downloadBtn = document.getElementById('download-btn');
         const dropOverlay = document.getElementById('drop-overlay');
+        const timelineModeBtn = document.getElementById('timeline-mode-btn');
 
         const SHELF_HEIGHT = 100;
         const CHARACTER_SIZE = 70;
@@ -219,6 +227,7 @@
         let listDrag = null;
         let isPinching = false;
         let initialPinchDistance = 0;
+        let isTimelineModeActive = false;
         
         function updateTransform() {
             canvas.style.transform = `translate(${pan.x}px, ${pan.y}px) scale(${scale})`;
@@ -244,11 +253,9 @@
 
             let currentMode = 'none';
 
-            // Timeline drawing is always initiated with Shift.
-            if (e.shiftKey && !e.touches) {
+            if (isTimelineModeActive) {
                 currentMode = 'timeline';
             } 
-            // Repositioning is initiated with dblclick OR if no timeline exists yet.
             else if (charElement.classList.contains('reposition-mode') || !charElement.timeline) {
                 currentMode = 'reposition';
             }
@@ -403,6 +410,14 @@
         window.addEventListener('touchend', onPointerUp);
         window.addEventListener('touchcancel', onPointerUp);
         
+        timelineModeBtn.addEventListener('click', () => {
+            isTimelineModeActive = !isTimelineModeActive;
+            timelineModeBtn.classList.toggle('active', isTimelineModeActive);
+            if (isTimelineModeActive) {
+                document.querySelectorAll('.character-on-canvas.reposition-mode').forEach(el => el.classList.remove('reposition-mode'));
+            }
+        });
+
         function showToast(message){ toastMessage.textContent = message; toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3000); }
         charImageInput.addEventListener('change', () => { fileNameSpan.textContent = charImageInput.files.length > 0 ? charImageInput.files[0].name : 'No file chosen'; });
         addCharacterForm.addEventListener('submit', (e) => { e.preventDefault(); const name = charNameInput.value; const color = charColorInput.value; const imageFile = charImageInput.files[0]; if (!name || !imageFile) { showToast("Please enter a name and choose an image for the character."); return; } const reader = new FileReader(); reader.onload = (event) => { characters.push({ id: Date.now(), name: name, color: color, imageUrl: event.target.result }); renderCharacterList(); addCharacterForm.reset(); fileNameSpan.textContent = 'No file chosen'; document.querySelector('details').open = false; }; reader.readAsDataURL(imageFile); });
