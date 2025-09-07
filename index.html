@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>لوحة الخط الزمني لشخصيات الأنمي</title>
+    <title>Anime Character Timeline Canvas</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Tajawal', sans-serif;
+            font-family: 'Inter', sans-serif;
             overscroll-behavior: none;
             touch-action: none;
         }
@@ -122,37 +122,37 @@
         <div class="max-w-7xl mx-auto">
              <div class="flex justify-between items-center">
                 <details class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 flex-grow">
-                    <summary class="p-2 cursor-pointer font-bold text-center text-gray-700 dark:text-gray-300">إضافة شخصية جديدة</summary>
+                    <summary class="p-2 cursor-pointer font-bold text-center text-gray-700 dark:text-gray-300">Add New Character</summary>
                     <form id="add-character-form" class="flex flex-col md:flex-row items-center gap-3 p-3 border-t border-gray-200 dark:border-gray-700">
-                        <input type="text" id="char-name" placeholder="اسم الشخصية" class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 p-2 rounded-md w-full md:w-auto flex-grow focus:ring-2 focus:ring-indigo-500" required>
+                        <input type="text" id="char-name" placeholder="Character Name" class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 p-2 rounded-md w-full md:w-auto flex-grow focus:ring-2 focus:ring-indigo-500" required>
                         <div class="flex items-center gap-2">
-                             <label for="char-image" class="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-md text-sm whitespace-nowrap">اختر صورة</label>
+                             <label for="char-image" class="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-md text-sm whitespace-nowrap">Choose Image</label>
                             <input type="file" id="char-image" accept="image/*" class="hidden" required>
-                            <span id="file-name" class="text-xs text-gray-500 dark:text-gray-400 max-w-[100px] truncate">لم يتم اختيار ملف</span>
+                            <span id="file-name" class="text-xs text-gray-500 dark:text-gray-400 max-w-[100px] truncate">No file chosen</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <label for="char-color" class="text-sm">اللون</label>
+                            <label for="char-color" class="text-sm">Color</label>
                             <input type="color" id="char-color" value="#ff0000" class="w-10 h-10 rounded-md border-2 border-gray-200 dark:border-gray-700 cursor-pointer">
                         </div>
-                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-md font-bold w-full md:w-auto">إضافة</button>
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-md font-bold w-full md:w-auto">Add</button>
                     </form>
                 </details>
-                <button id="theme-toggle" type="button" class="ms-3 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600">
+                <button id="theme-toggle" type="button" class="ml-3 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600">
                     <svg id="theme-toggle-dark-icon" class="hidden w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
                     <svg id="theme-toggle-light-icon" class="hidden w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.121-3.536a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM10 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm-4.464-3.05a1 1 0 00-1.414 1.414l.707.707a1 1 0 001.414-1.414l-.707-.707zm-2.121-3.536a1 1 0 01.707-.293h1.414a1 1 0 110 2H4.222a1 1 0 01-.707-1.707z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
                 </button>
             </div>
 
             <div id="character-list-container" class="mt-2 bg-white dark:bg-gray-900 p-2 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors duration-300">
-                <h3 class="text-center font-semibold text-sm mb-2 text-gray-600 dark:text-gray-400">قائمة الشخصيات (اسحب شخصية إلى اللوحة)</h3>
+                <h3 class="text-center font-semibold text-sm mb-2 text-gray-600 dark:text-gray-400">Character List (Drag a character to the canvas)</h3>
                  <div id="character-list" class="flex gap-4 overflow-x-auto p-2 min-h-[90px] items-center justify-start">
-                     <p id="empty-list-msg" class="text-gray-500 w-full text-center">لم تتم إضافة أي شخصيات بعد.</p>
+                     <p id="empty-list-msg" class="text-gray-500 w-full text-center">No characters added yet.</p>
                  </div>
             </div>
         </div>
     </div>
 
-    <div id="toast" class="toast fixed bottom-24 right-4 bg-red-500 text-white py-2 px-4 rounded-lg shadow-lg z-20">
+    <div id="toast" class="toast fixed bottom-5 right-5 bg-red-500 text-white py-2 px-4 rounded-lg shadow-lg z-20">
         <p id="toast-message"></p>
     </div>
 
@@ -202,13 +202,12 @@
             return `${start} ${rest}`;
         }
 
-        // --- UPDATED DRAG LOGIC ---
+        // --- DRAG LOGIC ---
 
         function dragCharacterStart(e, charElement) {
             e.stopPropagation();
 
             let currentMode = 'none';
-            // Timeline mode is only activated with Shift key on mouse events
             if (e.shiftKey && !e.touches) {
                 currentMode = 'timeline';
             } else if (charElement.classList.contains('reposition-mode')) {
@@ -358,8 +357,8 @@
         window.addEventListener('touchcancel', onPointerUp);
         
         function showToast(message){ toastMessage.textContent = message; toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3000); }
-        charImageInput.addEventListener('change', () => { fileNameSpan.textContent = charImageInput.files.length > 0 ? charImageInput.files[0].name : 'لم يتم اختيار ملف'; });
-        addCharacterForm.addEventListener('submit', (e) => { e.preventDefault(); const name = charNameInput.value; const color = charColorInput.value; const imageFile = charImageInput.files[0]; if (!name || !imageFile) { showToast("الرجاء إدخال اسم واختيار صورة للشخصية."); return; } const reader = new FileReader(); reader.onload = (event) => { characters.push({ id: Date.now(), name: name, color: color, imageUrl: event.target.result }); renderCharacterList(); addCharacterForm.reset(); fileNameSpan.textContent = 'لم يتم اختيار ملف'; document.querySelector('details').open = false; }; reader.readAsDataURL(imageFile); });
+        charImageInput.addEventListener('change', () => { fileNameSpan.textContent = charImageInput.files.length > 0 ? charImageInput.files[0].name : 'No file chosen'; });
+        addCharacterForm.addEventListener('submit', (e) => { e.preventDefault(); const name = charNameInput.value; const color = charColorInput.value; const imageFile = charImageInput.files[0]; if (!name || !imageFile) { showToast("Please enter a name and choose an image for the character."); return; } const reader = new FileReader(); reader.onload = (event) => { characters.push({ id: Date.now(), name: name, color: color, imageUrl: event.target.result }); renderCharacterList(); addCharacterForm.reset(); fileNameSpan.textContent = 'No file chosen'; document.querySelector('details').open = false; }; reader.readAsDataURL(imageFile); });
         function renderCharacterList(){ characterList.innerHTML = ''; if (characters.length === 0) { characterList.appendChild(emptyListMsg); return; } characters.forEach(char => { const charDiv = document.createElement('div'); charDiv.className = 'flex flex-col items-center gap-1 character-list-item w-20 flex-shrink-0'; charDiv.draggable = true; charDiv.dataset.characterId = char.id; const img = document.createElement('img'); img.src = char.imageUrl; img.className = 'w-16 h-16 rounded-lg object-cover border-2'; img.style.borderColor = char.color; const nameSpan = document.createElement('span'); nameSpan.className = 'text-xs text-center truncate w-full'; nameSpan.textContent = char.name; charDiv.appendChild(img); charDiv.appendChild(nameSpan); charDiv.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', char.id)); charDiv.addEventListener('touchstart', (e) => { e.preventDefault(); startListDrag(e, charDiv, char.id); }, { passive: false }); characterList.appendChild(charDiv); }); }
         
         canvasContainer.addEventListener('dragover', (e) => e.preventDefault());
@@ -394,7 +393,7 @@
         
         function startListDrag(e, element, charId) { const ghost = element.cloneNode(true); ghost.id = 'ghost-element'; document.body.appendChild(ghost); const coords = getEventCoords(e); ghost.style.left = `${coords.x - ghost.offsetWidth / 2}px`; ghost.style.top = `${coords.y - ghost.offsetHeight / 2}px`; listDrag = { ghost, charId }; window.addEventListener('touchmove', moveListDrag, { passive: false }); window.addEventListener('touchend', endListDrag, { once: true }); }
         function moveListDrag(e) { if (!listDrag) return; e.preventDefault(); const coords = getEventCoords(e); listDrag.ghost.style.left = `${coords.x - listDrag.ghost.offsetWidth / 2}px`; listDrag.ghost.style.top = `${coords.y - listDrag.ghost.offsetHeight / 2}px`; }
-        function endListDrag(e) { if (!listDrag) return; window.removeEventListener('touchmove', moveListDrag); listDrag.ghost.remove(); const touch = e.changedTouches[0]; const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY); if (dropTarget === canvasContainer) { const character = characters.find(c => c.id == listDrag.charId); if (character) { const containerRect = canvasContainer.getBoundingClientRect(); const x = (touch.clientX - containerRect.left - pan.x) / scale; const y = (touch.clientY - containerRect.top - pan.y) / scale; createCharacterOnCanvas(character, x, y); } } listDrag = null; }
+        function endListDrag(e) { if (!listDrag) return; window.removeEventListener('moveListDrag', moveListDrag); listDrag.ghost.remove(); const touch = e.changedTouches[0]; const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY); if (dropTarget === canvasContainer) { const character = characters.find(c => c.id == listDrag.charId); if (character) { const containerRect = canvasContainer.getBoundingClientRect(); const x = (touch.clientX - containerRect.left - pan.x) / scale; const y = (touch.clientY - containerRect.top - pan.y) / scale; createCharacterOnCanvas(character, x, y); } } listDrag = null; }
 
         // --- DARK MODE LOGIC ---
         const themeToggleBtn = document.getElementById('theme-toggle');
