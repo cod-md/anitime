@@ -34,14 +34,19 @@
             align-items: center;
             justify-content: center;
             user-select: none;
-            transition: top 0.1s linear;
+            /* UPDATED: Added transition for left as well */
+            transition: top 0.1s ease-out, left 0.1s linear;
             z-index: 10;
+        }
+        /* Disable transition during active drag to prevent lag */
+        .character-on-canvas.dragging {
+            transition: none;
         }
         .character-on-canvas img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            border-radius: 50%;
+            border-radius: 0.5rem; 
             border: 3px solid white;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
             pointer-events: none;
@@ -180,8 +185,12 @@
             return `${start} ${rest}`;
         }
 
+        // --- UPDATED DRAG LOGIC ---
+
         function dragCharacterStart(e, charElement) {
             e.stopPropagation();
+            charElement.classList.add('dragging');
+
             if (!charElement.timeline) {
                 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 path.setAttribute('stroke', charElement.dataset.color);
@@ -196,52 +205,112 @@
                 const startPos = { x: parseFloat(charElement.style.left) + CHARACTER_HALF_SIZE, y: parseFloat(charElement.style.top) + CHARACTER_HALF_SIZE };
                 charElement.timeline = { svg: svg, path: path, points: [startPos] };
             }
+            
             const coords = getEventCoords(e);
             const rect = charElement.getBoundingClientRect();
-            activeDrag = { element: charElement, timeline: charElement.timeline, offsetX: (coords.x - rect.left) / scale, offsetY: (coords.y - rect.top) / scale, lastPreviewPoints: [...charElement.timeline.points] };
+            const containerRect = canvasContainer.getBoundingClientRect();
+
+            activeDrag = {
+                element: charElement,
+                timeline: charElement.timeline,
+                offsetX: (coords.x - rect.left) / scale,
+                offsetY: (coords.y - rect.top) / scale,
+                lastPreviewPoints: [...charElement.timeline.points],
+                
+                // New properties for mode detection
+                mode: 'undecided',
+                startX: (coords.x - containerRect.left - pan.x) / scale,
+                startY: (coords.y - containerRect.top - pan.y) / scale,
+                originalTop: parseFloat(charElement.style.top),
+                originalLeft: parseFloat(charElement.style.left),
+                originalPoints: [...charElement.timeline.points]
+            };
         }
 
         function dragCharacterMove(e) {
             if (!activeDrag) return;
             e.preventDefault();
+            const DRAG_THRESHOLD = 10;
             const coords = getEventCoords(e);
             const containerRect = canvasContainer.getBoundingClientRect();
             const currentX = (coords.x - containerRect.left - pan.x) / scale;
             const currentY = (coords.y - containerRect.top - pan.y) / scale;
-            let newLeft = currentX - activeDrag.offsetX;
-            const rawTop = currentY - activeDrag.offsetY;
-            const snappedCenterY = Math.round((rawTop + CHARACTER_HALF_SIZE) / SHELF_HEIGHT) * SHELF_HEIGHT;
-            const snappedTop = snappedCenterY - CHARACTER_HALF_SIZE;
-            const lastCommittedPoint = activeDrag.timeline.points[activeDrag.timeline.points.length - 1];
-            const lastCommittedLeft = lastCommittedPoint.x - CHARACTER_HALF_SIZE;
-            newLeft = Math.max(newLeft, lastCommittedLeft);
-            activeDrag.element.style.left = `${newLeft}px`;
-            activeDrag.element.style.top = `${snappedTop}px`;
-            const currentPos = { x: newLeft + CHARACTER_HALF_SIZE, y: snappedTop + CHARACTER_HALF_SIZE };
-            let previewPoints = [...activeDrag.timeline.points];
-            const lastCorner = previewPoints[previewPoints.length - 1];
-            if (currentPos.y !== lastCorner.y) {
-                previewPoints.push({ x: lastCorner.x, y: currentPos.y });
-            }
-            previewPoints.push(currentPos);
-            if (previewPoints.length > 1) {
-                const last = previewPoints[previewPoints.length - 1];
-                const secondLast = previewPoints[previewPoints.length - 2];
-                if (last.x === secondLast.x && last.y === secondLast.y) {
-                    previewPoints.pop();
+
+            // --- Mode Detection ---
+            if (activeDrag.mode === 'undecided') {
+                const deltaX = Math.abs(currentX - activeDrag.startX);
+                const deltaY = Math.abs(currentY - activeDrag.startY);
+                if (deltaX > DRAG_THRESHOLD) {
+                    activeDrag.mode = 'timeline';
+                } else if (deltaY > DRAG_THRESHOLD) {
+                    activeDrag.mode = 'reposition';
                 }
             }
-            activeDrag.timeline.path.setAttribute('d', generatePathD(previewPoints));
-            activeDrag.lastPreviewPoints = previewPoints;
+
+            // --- Logic Branching ---
+            if (activeDrag.mode === 'timeline') {
+                // This is the original logic for drawing the timeline forward
+                let newLeft = currentX - activeDrag.offsetX;
+                const rawTop = currentY - activeDrag.offsetY;
+                const snappedCenterY = Math.round((rawTop + CHARACTER_HALF_SIZE) / SHELF_HEIGHT) * SHELF_HEIGHT;
+                const snappedTop = snappedCenterY - CHARACTER_HALF_SIZE;
+                
+                const lastCommittedPoint = activeDrag.timeline.points[activeDrag.timeline.points.length - 1];
+                const lastCommittedLeft = lastCommittedPoint.x - CHARACTER_HALF_SIZE;
+                newLeft = Math.max(newLeft, lastCommittedLeft);
+                
+                activeDrag.element.style.left = `${newLeft}px`;
+                activeDrag.element.style.top = `${snappedTop}px`;
+                
+                const currentPos = { x: newLeft + CHARACTER_HALF_SIZE, y: snappedTop + CHARACTER_HALF_SIZE };
+                let previewPoints = [...activeDrag.timeline.points];
+                const lastCorner = previewPoints[previewPoints.length - 1];
+                if (currentPos.y !== lastCorner.y) {
+                    previewPoints.push({ x: lastCorner.x, y: currentPos.y });
+                }
+                previewPoints.push(currentPos);
+                if (previewPoints.length > 1) {
+                    const last = previewPoints[previewPoints.length - 1];
+                    const secondLast = previewPoints[previewPoints.length - 2];
+                    if (last.x === secondLast.x && last.y === secondLast.y) {
+                        previewPoints.pop();
+                    }
+                }
+                activeDrag.timeline.path.setAttribute('d', generatePathD(previewPoints));
+                activeDrag.lastPreviewPoints = previewPoints;
+
+            } else if (activeDrag.mode === 'reposition') {
+                // This is the new logic for moving the character and its entire timeline
+                const newLeft = currentX - activeDrag.offsetX;
+                const rawTop = currentY - activeDrag.offsetY;
+                const snappedCenterY = Math.round((rawTop + CHARACTER_HALF_SIZE) / SHELF_HEIGHT) * SHELF_HEIGHT;
+                const snappedTop = snappedCenterY - CHARACTER_HALF_SIZE;
+
+                const deltaX = newLeft - activeDrag.originalLeft;
+                const deltaY = snappedTop - activeDrag.originalTop;
+                
+                activeDrag.element.style.left = `${newLeft}px`;
+                activeDrag.element.style.top = `${snappedTop}px`;
+
+                const newPoints = activeDrag.originalPoints.map(p => ({
+                    x: p.x + deltaX,
+                    y: p.y + deltaY
+                }));
+
+                activeDrag.timeline.path.setAttribute('d', generatePathD(newPoints));
+                activeDrag.lastPreviewPoints = newPoints;
+            }
         }
 
         function dragCharacterEnd() {
             if (!activeDrag) return;
+            activeDrag.element.classList.remove('dragging');
             activeDrag.timeline.points = activeDrag.lastPreviewPoints;
-            activeDrag.timeline.path.setAttribute('d', generatePathD(activeDrag.timeline.points));
+            // The final path is already set, so we just clean up
             activeDrag = null;
         }
 
+        // --- Global Event Handlers for Pan, Zoom, and Drag ---
         function onPointerDown(e) { if (e.touches && e.touches.length === 2) { isPanning = false; isPinching = true; initialPinchDistance = getPinchDistance(e); } else if (e.target === canvasContainer || e.target === canvas) { isPanning = true; const coords = getEventCoords(e); panStartPoint.x = coords.x - pan.x; panStartPoint.y = coords.y - pan.y; canvasContainer.style.cursor = 'grabbing'; } }
         function onPointerMove(e) { if (isPinching && e.touches && e.touches.length === 2) { const newDist = getPinchDistance(e); const scaleFactor = newDist / initialPinchDistance; const oldScale = scale; scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * scaleFactor)); const center = getPinchCenter(e); pan.x = center.x - (center.x - pan.x) * (scale / oldScale); pan.y = center.y - (center.y - pan.y) * (scale / oldScale); updateTransform(); initialPinchDistance = newDist; } else if (isPanning) { const coords = getEventCoords(e); pan.x = coords.x - panStartPoint.x; pan.y = coords.y - panStartPoint.y; updateTransform(); } else if (activeDrag) { dragCharacterMove(e); } }
         function onPointerUp(e) { if (isPinching && (!e.touches || e.touches.length < 2)) { isPinching = false; } if (isPanning) { isPanning = false; canvasContainer.style.cursor = 'grab'; } if (activeDrag) dragCharacterEnd(); }
@@ -256,11 +325,13 @@
         window.addEventListener('touchend', onPointerUp);
         window.addEventListener('touchcancel', onPointerUp);
         
+        // --- Character Creation & List ---
         function showToast(message){ toastMessage.textContent = message; toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3000); }
         charImageInput.addEventListener('change', () => { fileNameSpan.textContent = charImageInput.files.length > 0 ? charImageInput.files[0].name : 'لم يتم اختيار ملف'; });
         addCharacterForm.addEventListener('submit', (e) => { e.preventDefault(); const name = charNameInput.value; const color = charColorInput.value; const imageFile = charImageInput.files[0]; if (!name || !imageFile) { showToast("الرجاء إدخال اسم واختيار صورة للشخصية."); return; } const reader = new FileReader(); reader.onload = (event) => { characters.push({ id: Date.now(), name: name, color: color, imageUrl: event.target.result }); renderCharacterList(); addCharacterForm.reset(); fileNameSpan.textContent = 'لم يتم اختيار ملف'; document.querySelector('details').open = false; }; reader.readAsDataURL(imageFile); });
-        function renderCharacterList(){ characterList.innerHTML = ''; if (characters.length === 0) { characterList.appendChild(emptyListMsg); return; } characters.forEach(char => { const charDiv = document.createElement('div'); charDiv.className = 'flex flex-col items-center gap-1 character-list-item w-20 flex-shrink-0'; charDiv.draggable = true; charDiv.dataset.characterId = char.id; const img = document.createElement('img'); img.src = char.imageUrl; img.className = 'w-16 h-16 rounded-full object-cover border-2'; img.style.borderColor = char.color; const nameSpan = document.createElement('span'); nameSpan.className = 'text-xs text-center truncate w-full'; nameSpan.textContent = char.name; charDiv.appendChild(img); charDiv.appendChild(nameSpan); charDiv.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', char.id)); charDiv.addEventListener('touchstart', (e) => { e.preventDefault(); startListDrag(e, charDiv, char.id); }, { passive: false }); characterList.appendChild(charDiv); }); }
+        function renderCharacterList(){ characterList.innerHTML = ''; if (characters.length === 0) { characterList.appendChild(emptyListMsg); return; } characters.forEach(char => { const charDiv = document.createElement('div'); charDiv.className = 'flex flex-col items-center gap-1 character-list-item w-20 flex-shrink-0'; charDiv.draggable = true; charDiv.dataset.characterId = char.id; const img = document.createElement('img'); img.src = char.imageUrl; img.className = 'w-16 h-16 rounded-lg object-cover border-2'; img.style.borderColor = char.color; const nameSpan = document.createElement('span'); nameSpan.className = 'text-xs text-center truncate w-full'; nameSpan.textContent = char.name; charDiv.appendChild(img); charDiv.appendChild(nameSpan); charDiv.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', char.id)); charDiv.addEventListener('touchstart', (e) => { e.preventDefault(); startListDrag(e, charDiv, char.id); }, { passive: false }); characterList.appendChild(charDiv); }); }
         
+        // --- Drag and Drop to Canvas ---
         canvasContainer.addEventListener('dragover', (e) => e.preventDefault());
         canvasContainer.addEventListener('drop', (e) => { e.preventDefault(); const charId = e.dataTransfer.getData('text/plain'); const character = characters.find(c => c.id == charId); if (!character) return; const containerRect = canvasContainer.getBoundingClientRect(); const x = (e.clientX - containerRect.left - pan.x) / scale; const y = (e.clientY - containerRect.top - pan.y) / scale; createCharacterOnCanvas(character, x, y); });
 
@@ -281,6 +352,7 @@
             charElement.addEventListener('touchstart', (e) => dragCharacterStart(e, charElement), { passive: false });
         }
         
+        // --- Mobile Drag from List ---
         function startListDrag(e, element, charId) { const ghost = element.cloneNode(true); ghost.id = 'ghost-element'; document.body.appendChild(ghost); const coords = getEventCoords(e); ghost.style.left = `${coords.x - ghost.offsetWidth / 2}px`; ghost.style.top = `${coords.y - ghost.offsetHeight / 2}px`; listDrag = { ghost, charId }; window.addEventListener('touchmove', moveListDrag, { passive: false }); window.addEventListener('touchend', endListDrag, { once: true }); }
         function moveListDrag(e) { if (!listDrag) return; e.preventDefault(); const coords = getEventCoords(e); listDrag.ghost.style.left = `${coords.x - listDrag.ghost.offsetWidth / 2}px`; listDrag.ghost.style.top = `${coords.y - listDrag.ghost.offsetHeight / 2}px`; }
         function endListDrag(e) { if (!listDrag) return; window.removeEventListener('touchmove', moveListDrag); listDrag.ghost.remove(); const touch = e.changedTouches[0]; const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY); if (dropTarget === canvasContainer) { const character = characters.find(c => c.id == listDrag.charId); if (character) { const containerRect = canvasContainer.getBoundingClientRect(); const x = (touch.clientX - containerRect.left - pan.x) / scale; const y = (touch.clientY - containerRect.top - pan.y) / scale; createCharacterOnCanvas(character, x, y); } } listDrag = null; }
@@ -308,7 +380,6 @@
             }
         }
 
-        // Apply theme on initial load
         if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
         } else {
@@ -317,7 +388,6 @@
         updateCanvasBackground();
         updateToggleIcon();
 
-        // Add event listener for the toggle button
         themeToggleBtn.addEventListener('click', () => {
             document.documentElement.classList.toggle('dark');
             if (document.documentElement.classList.contains('dark')) {
